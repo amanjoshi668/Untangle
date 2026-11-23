@@ -9,6 +9,7 @@ import '../../services/vault_storage.dart';
 import '../untangle_theme.dart';
 import '../widgets/brand_widgets.dart';
 import '../widgets/technique_info_popover.dart';
+import '../widgets/untangle_character.dart';
 import 'settings_sheet.dart';
 import 'workspace_screen.dart';
 
@@ -334,9 +335,14 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _buildActiveTabBody(BuildContext context, {required bool isSplit}) {
-    if (_navIndex == 0) return _buildDecideTab(context);
-    if (_navIndex == 1) return _buildTechniquesTab(context, isSplit: isSplit);
-    return _buildJournalTab(context);
+    final Widget body = _navIndex == 0
+        ? _buildDecideTab(context)
+        : (_navIndex == 1 ? _buildTechniquesTab(context, isSplit: isSplit) : _buildJournalTab(context));
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOut,
+      child: KeyedSubtree(key: ValueKey('tab_$_navIndex'), child: body),
+    );
   }
 
   // ===========================================================================
@@ -416,15 +422,37 @@ class _HomeShellState extends State<HomeShell> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+            padding: const EdgeInsets.fromLTRB(18, 16, 16, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_greeting, style: UntangleTheme.eyebrow(UntangleTheme.goldDark)),
-                const SizedBox(height: 6),
-                Text(
-                  'What are you trying\nto untangle?',
-                  style: UntangleTheme.display(context, size: 25, color: UntangleTheme.paper),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_greeting, style: UntangleTheme.eyebrow(UntangleTheme.goldDark)),
+                          const SizedBox(height: 6),
+                          Text(
+                            'What are you trying\nto untangle?',
+                            style: UntangleTheme.display(context, size: 24, color: UntangleTheme.paper),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    UntangleCharacter(
+                      key: const Key('kip_hero_character'),
+                      mood: _problemCtrl.text.trim().length > 12
+                          ? CharacterMood.aha
+                          : CharacterMood.thinking,
+                      size: 62,
+                      inkColor: UntangleTheme.paper,
+                      accentColor: UntangleTheme.goldDark,
+                    ),
+                  ],
                 ),
                 if (!widget.vault.hasUserCreatedItems) ...[
                   const SizedBox(height: 6),
@@ -1007,9 +1035,22 @@ class _HomeShellState extends State<HomeShell> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('The Book Compass', style: UntangleTheme.display(context, size: 17)),
-              const SizedBox(height: 2),
-              Text('Me ↔ Others  ×  Doing ↔ Thinking — tap any number', style: tt.bodySmall),
+              Row(
+                children: [
+                  const UntangleCharacter(mood: CharacterMood.exploring, size: 42),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('The Book Compass', style: UntangleTheme.display(context, size: 17)),
+                        const SizedBox(height: 2),
+                        Text('Me ↔ Others  ×  Doing ↔ Thinking — tap any number', style: tt.bodySmall),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               Expanded(
                 child: LayoutBuilder(
@@ -1074,7 +1115,6 @@ class _HomeShellState extends State<HomeShell> {
   // TAB 3: JOURNAL & REAL-CALENDAR SUPERMEMO CATCH-UP
   // ===========================================================================
   Widget _buildJournalTab(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final decisions = widget.vault.decisions;
     final due = widget.vault.dueReviews(_now);
@@ -1086,8 +1126,8 @@ class _HomeShellState extends State<HomeShell> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Opacity(opacity: 0.5, child: KnotMark(size: 40, color: cs.primary, strokeWidth: 3.2)),
-              const SizedBox(height: 14),
+              const UntangleCharacter(mood: CharacterMood.celebrating, size: 68),
+              const SizedBox(height: 12),
               Text('Nothing tangled yet', style: UntangleTheme.display(context, size: 19)),
               const SizedBox(height: 6),
               Text(
@@ -1144,7 +1184,10 @@ class _HomeShellState extends State<HomeShell> {
                     foregroundColor: const Color(0xFF18181B),
                     visualDensity: VisualDensity.compact,
                   ),
-                  onPressed: () => widget.vault.catchUpAllOverdueReviews(realToday: _now),
+                  onPressed: () {
+                    widget.vault.catchUpAllOverdueReviews(realToday: _now);
+                    showUntangleCelebration(context, 'All caught up on your spaced reviews!');
+                  },
                   child: const Text('Catch up', style: TextStyle(fontSize: 12)),
                 ),
               ],

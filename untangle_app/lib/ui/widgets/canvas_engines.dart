@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../models/decision_model.dart';
+import 'untangle_character.dart';
 
 const List<Color> _quadHues = [
   Color(0xFF4F8560), // sage
@@ -310,10 +311,22 @@ class _CanvasEngineWidgetState extends State<CanvasEngineWidget> {
     final total = math.max(lSum + rSum, 1);
     final leftFlex = math.max(((lSum / total) * 100).round(), 8);
     final rightFlex = math.max(((rSum / total) * 100).round(), 8);
+    final pullTilt = ((rSum - lSum) / total).clamp(-1.0, 1.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: UntangleCharacter(
+              key: const Key('kip_tug_of_war'),
+              mood: CharacterMood.tugOfWar,
+              size: 62,
+              tilt: pullTilt,
+            ),
+          ),
+        ),
         Row(
           children: [
             Expanded(
@@ -499,6 +512,11 @@ class _CanvasEngineWidgetState extends State<CanvasEngineWidget> {
     }
 
     if (sub == 'flow') {
+      final gap = widget.data.s1 - widget.data.s2;
+      final flowMood = gap >= 3
+          ? CharacterMood.flowStressed
+          : (gap <= -3 ? CharacterMood.flowBored : CharacterMood.flowCalm);
+      final zoneName = gap >= 3 ? 'Burnout Zone' : (gap <= -3 ? 'Boreout Zone' : 'In the Flow');
       return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -508,6 +526,25 @@ class _CanvasEngineWidgetState extends State<CanvasEngineWidget> {
         ),
         child: Column(
           children: [
+            Row(
+              children: [
+                UntangleCharacter(mood: flowMood, size: 46),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(zoneName, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        'Challenge ${widget.data.s1.round()}/10 · Skill ${widget.data.s2.round()}/10',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               height: 150,
               width: double.infinity,
@@ -747,11 +784,16 @@ class _CanvasEngineWidgetState extends State<CanvasEngineWidget> {
             SizedBox(
               height: 120,
               width: double.infinity,
-              child: CustomPaint(
-                painter: _NineDotPainter(
-                  solved: widget.data.puzzleSolved,
-                  primary: cs.primary,
-                  ink: cs.onSurface,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.0, end: widget.data.puzzleSolved ? 1.0 : 0.0),
+                duration: const Duration(milliseconds: 520),
+                curve: Curves.easeOutCubic,
+                builder: (_, progress, __) => CustomPaint(
+                  painter: _NineDotPainter(
+                    progress: progress,
+                    primary: cs.primary,
+                    ink: cs.onSurface,
+                  ),
                 ),
               ),
             ),
@@ -1200,8 +1242,14 @@ class _CanvasEngineWidgetState extends State<CanvasEngineWidget> {
             SizedBox(
               height: 92,
               width: double.infinity,
-              child: CustomPaint(
-                painter: _HistogramPainter(bins: sim.bins, primary: cs.primary),
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey('mc_hist_${widget.data.mcSeed}_${widget.data.mcMin.round()}_${widget.data.mcLikely.round()}_${widget.data.mcMax.round()}'),
+                tween: Tween<double>(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 380),
+                curve: Curves.easeOutCubic,
+                builder: (_, grow, __) => CustomPaint(
+                  painter: _HistogramPainter(bins: sim.bins, primary: cs.primary, grow: grow),
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -1440,12 +1488,12 @@ class _SailRadarPainter extends CustomPainter {
 }
 
 class _NineDotPainter extends CustomPainter {
-  final bool solved;
+  final double progress;
   final Color primary;
   final Color ink;
 
   const _NineDotPainter({
-    required this.solved,
+    required this.progress,
     required this.primary,
     required this.ink,
   });
@@ -1461,34 +1509,35 @@ class _NineDotPainter extends CustomPainter {
         canvas.drawCircle(Offset(cx + dx * step, cy + dy * step), 4.2, dotPaint);
       }
     }
-    if (solved) {
-      final p = Path()
+    if (progress > 0.01) {
+      final full = Path()
         ..moveTo(cx - step, cy + step)
         ..lineTo(cx - step, cy - step * 1.65)
         ..lineTo(cx + step * 1.65, cy + step)
         ..lineTo(cx - step * 1.4, cy + step)
         ..lineTo(cx + step * 1.2, cy - step * 1.2);
-      canvas.drawPath(
-        p,
-        Paint()
-          ..color = primary
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.4
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round,
-      );
+      final paint = Paint()
+        ..color = primary
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      for (final metric in full.computeMetrics()) {
+        canvas.drawPath(metric.extractPath(0, metric.length * progress.clamp(0.0, 1.0)), paint);
+      }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _NineDotPainter old) => old.solved != solved;
+  bool shouldRepaint(covariant _NineDotPainter old) => old.progress != progress;
 }
 
 class _HistogramPainter extends CustomPainter {
   final List<double> bins;
   final Color primary;
+  final double grow;
 
-  const _HistogramPainter({required this.bins, required this.primary});
+  const _HistogramPainter({required this.bins, required this.primary, this.grow = 1.0});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1496,7 +1545,7 @@ class _HistogramPainter extends CustomPainter {
     final barW = (size.width / bins.length) * 0.72;
     final gap = (size.width / bins.length) * 0.28;
     for (int i = 0; i < bins.length; i++) {
-      final h = math.max(bins[i] * (size.height - 8), 3.0);
+      final h = math.max(bins[i] * (size.height - 8) * grow, 3.0);
       final x = i * (barW + gap) + gap / 2;
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, size.height - h, barW, h),
@@ -1510,5 +1559,5 @@ class _HistogramPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _HistogramPainter old) => old.bins != bins;
+  bool shouldRepaint(covariant _HistogramPainter old) => old.bins != bins || old.grow != grow;
 }

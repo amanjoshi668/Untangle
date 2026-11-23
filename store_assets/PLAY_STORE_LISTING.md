@@ -21,4 +21,5 @@ Untangle gives you 52 classic strategic thinking models as calm, interactive too
 **Category:** Productivity · **Contact:** <support email> · **Privacy:** <cloud run url>/privacy
 
 ## Release notes
+- **1.1.0 (2):** Added Kip, an expressive Decision Book companion character, plus live tug-of-war & flow animations, spring-animated `?` technique cards, animated 9-dot & Monte Carlo visuals, and celebratory decision-save feedback.
 - **1.0.0 (1):** First release — two ways to decide, 52 interactive models, compact ? guides, journal with spaced reviews, offline guest vault, light/dark themes.

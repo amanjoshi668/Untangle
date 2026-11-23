@@ -3,17 +3,28 @@ import '../../data/decision_book_catalog.dart';
 import '../../models/decision_model.dart';
 import '../untangle_theme.dart';
 import 'brand_widgets.dart';
+import 'untangle_character.dart';
 
-/// Compact floating '?' popover card — never occupies the whole screen.
+/// Compact floating '?' popover card — spring-animated and never full-screen.
 Future<void> showTechniqueInfoPopover({
   required BuildContext context,
   required DecisionModelSpec spec,
   ValueChanged<int>? onSelectRelatedModel,
 }) {
-  return showDialog<void>(
+  return showGeneralDialog<void>(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.28),
-    builder: (ctx) {
+    barrierDismissible: true,
+    barrierLabel: 'Dismiss technique guide',
+    barrierColor: Colors.black.withOpacity(0.30),
+    transitionDuration: const Duration(milliseconds: 240),
+    transitionBuilder: (ctx, anim, _, child) {
+      final scale = CurvedAnimation(parent: anim, curve: Curves.easeOutBack);
+      return FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(scale: Tween<double>(begin: 0.90, end: 1.0).animate(scale), child: child),
+      );
+    },
+    pageBuilder: (ctx, _, __) {
       final cs = Theme.of(ctx).colorScheme;
       final tt = Theme.of(ctx).textTheme;
       return Dialog(
@@ -80,17 +91,30 @@ Future<void> showTechniqueInfoPopover({
                     color: cs.secondary,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: RichText(
-                    text: TextSpan(
-                      style: tt.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.85)),
-                      children: [
-                        TextSpan(
-                          text: 'How to use: ',
-                          style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const UntangleCharacter(
+                        mood: CharacterMood.aha,
+                        size: 34,
+                        interactive: false,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: tt.bodySmall?.copyWith(color: cs.onSurface.withOpacity(0.85)),
+                            children: [
+                              TextSpan(
+                                text: 'How to use: ',
+                                style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface),
+                              ),
+                              TextSpan(text: spec.howTo),
+                            ],
+                          ),
                         ),
-                        TextSpan(text: spec.howTo),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),

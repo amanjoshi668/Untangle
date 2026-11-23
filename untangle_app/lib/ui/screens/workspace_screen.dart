@@ -6,6 +6,7 @@ import '../untangle_theme.dart';
 import '../widgets/brand_widgets.dart';
 import '../widgets/canvas_engines.dart';
 import '../widgets/technique_info_popover.dart';
+import '../widgets/untangle_character.dart';
 
 class WorkspacePane extends StatefulWidget {
   final DecisionModelSpec spec;
@@ -192,7 +193,36 @@ class _WorkspacePaneState extends State<WorkspacePane> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     await widget.vault.saveDecisionFromWorkspace(widget.spec, _ws);
+                    if (!mounted) return;
+                    messenger.hideCurrentSnackBar();
+                    messenger.showSnackBar(
+                      SnackBar(
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: UntangleTheme.heroStart,
+                        duration: const Duration(seconds: 2),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        content: const Row(
+                          children: [
+                            UntangleCharacter(
+                              mood: CharacterMood.celebrating,
+                              size: 34,
+                              inkColor: UntangleTheme.paper,
+                              accentColor: UntangleTheme.goldDark,
+                              interactive: false,
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Decision untangled & saved to Journal!',
+                                style: TextStyle(color: UntangleTheme.paper, fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                     widget.onSavedToJournal();
                   },
                   child: const Text('Save', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
@@ -249,28 +279,36 @@ class _WorkspacePaneState extends State<WorkspacePane> {
                         colors: [UntangleTheme.heroStart, UntangleTheme.heroEnd],
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.format_quote_rounded, size: 20, color: UntangleTheme.goldDark),
-                            const SizedBox(width: 6),
-                            Text('TAKEAWAY', style: UntangleTheme.eyebrow(UntangleTheme.goldDark)),
-                          ],
+                        const UntangleCharacter(
+                          mood: CharacterMood.aha,
+                          size: 46,
+                          inkColor: UntangleTheme.paper,
+                          accentColor: UntangleTheme.goldDark,
                         ),
-                        const SizedBox(height: 8),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: Text(
-                            takeaway,
-                            key: ValueKey(takeaway),
-                            style: const TextStyle(
-                              fontFamily: UntangleTheme.displayFamily,
-                              fontSize: 14.5,
-                              height: 1.45,
-                              color: UntangleTheme.paper,
-                            ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('TAKEAWAY', style: UntangleTheme.eyebrow(UntangleTheme.goldDark)),
+                              const SizedBox(height: 6),
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 220),
+                                child: Text(
+                                  takeaway,
+                                  key: ValueKey(takeaway),
+                                  style: const TextStyle(
+                                    fontFamily: UntangleTheme.displayFamily,
+                                    fontSize: 14.5,
+                                    height: 1.45,
+                                    color: UntangleTheme.paper,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

@@ -81,9 +81,12 @@ void main() {
     await tester.pumpWidget(UntangleApp(auth: auth, vault: vault, backend: backend));
     await tester.pumpAndSettle();
 
-    // Launches straight into app without login wall; guarded onboarding hint visible
+    // Launches straight into app without login wall; guarded onboarding hint & Kip companion visible
     expect(auth.isGuest, isTrue);
     expect(find.byKey(const Key('onboarding_decide_hint')), findsOneWidget);
+    expect(find.byKey(const Key('kip_hero_character')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('kip_hero_character')));
+    await tester.pumpAndSettle();
 
     // Enter dilemma in Mode 1
     await tester.enterText(
@@ -109,6 +112,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Stay in my comfortable senior role'), findsWidgets);
+    expect(find.byKey(const Key('kip_tug_of_war')), findsOneWidget);
 
     // Add a pulling force and save decision
     await tester.enterText(find.byKey(const Key('e2_add_field')), 'Equity upside & autonomy');

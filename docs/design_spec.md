@@ -5,7 +5,8 @@
 - **Dark theme (matte charcoal & gold):** Background `#121214`, Surface `#1C1C20`, Ink `#F5F5F4`, Muted `#A8A29E`, Border `#2E2E34`, Accent gold `#D4A853`.
 - **Signature dark gradient** (`#1E1A15 → #3B2F1E`) used sparingly for the three "moments that matter": the Decide hero prompt, the workspace **Takeaway** card, and the Journal "reviews due" banner.
 - **Serif display type** (`fontFamily: serif`) for headings, technique titles and takeaways gives a book-like character; sans-serif for UI text. Minimum text size `12 px`.
-- **Brand mark:** a loop resolving into a straight arrow (`KnotMark` CustomPainter), used in the header, as a faint watermark in the hero, and in empty states.
+- **Brand mark & Companion Character ("Kip"):** A loop resolving into a straight arrow (`KnotMark`) paired with **Kip** (`UntangleCharacter`), an expressive hand-drawn stick-figure thinker inspired by *The Decision Book*'s illustrations. Kip reacts with finite spring animations: thinking/aha in the Decide hero (tap to bounce & wave), live elastic tug-of-war leaning in Force Balance models, calm/stressed/bored moods in Flow, compass-exploring on Page-82 Compass, and celebrating on saves & review catch-ups.
+- **Tactile Micro-Animations:** Spring-animated (`Curves.easeOutBack`) compact `?` popovers, `AnimatedSwitcher` tab & recommendation cross-fades, smooth 9-dot path drawing, and rising Monte Carlo histogram bars.
 
 ## 2. Section Color System (from the book's four parts)
 | Section | Light | Dark | Used for |
