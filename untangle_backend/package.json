@@ -1,0 +1,17 @@
+{
+  "name": "untangle-backend",
+  "version": "1.0.0",
+  "description": "Stateless Cloud Run API for Untangle (Strategic Decision Studio)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "triage": "node triage_bugs.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "google-auth-library": "^9.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.12.0"
+  }
+}

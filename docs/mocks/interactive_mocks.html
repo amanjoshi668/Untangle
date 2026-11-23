@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Decide50 — Clean Interactive Mocks</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    input[type="range"] { accent-color: var(--primary); }
+    .mobile-frame {
+      width: 372px;
+      height: 780px;
+      border-radius: 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.10);
+    }
+    .split-frame {
+      width: 100%;
+      max-width: 980px;
+      height: 760px;
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.10);
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased min-h-screen">
+
+  <!-- QUIET MINIMAL TOP STUDIO BAR -->
+  <header class="sticky top-0 z-40 bg-[var(--background)]/90 backdrop-blur border-b border-[var(--border)] px-5 py-3">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4-4m-4 4l4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="font-semibold text-sm tracking-tight">Decide50</span>
+        <span class="text-xs text-[var(--muted-foreground)] hidden sm:inline">· Interactive Prototype</span>
+      </div>
+
+      <!-- Clean 3-View Switcher -->
+      <div class="flex items-center gap-1 bg-[var(--secondary)] p-1 rounded-xl border border-[var(--border)]">
+        <button onclick="setStudioView('app')" id="sv-app" class="px-3.5 py-1.5 rounded-lg text-xs font-medium transition">App Prototype</button>
+        <button onclick="setStudioView('screens')" id="sv-screens" class="px-3.5 py-1.5 rounded-lg text-xs font-medium transition">Screen Overview</button>
+        <button onclick="setStudioView('guide')" id="sv-guide" class="px-3.5 py-1.5 rounded-lg text-xs font-medium transition">52 Technique Writeups</button>
+      </div>
+
+      <!-- Subtle Viewport Switch (Only visible in App Prototype) -->
+      <div id="viewport-toggle" class="flex items-center gap-1 bg-[var(--secondary)] p-1 rounded-xl border border-[var(--border)]">
+        <button onclick="setLayout('mobile')" id="ly-mobile" class="px-3 py-1 rounded-lg text-xs font-medium transition">Mobile</button>
+        <button onclick="setLayout('split')" id="ly-split" class="px-3 py-1 rounded-lg text-xs font-medium transition">Split View</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 md:py-8">
+
+    <!-- ========================================================= -->
+    <!-- VIEW 1: CLEAN LIVE APP PROTOTYPE                          -->
+    <!-- ========================================================= -->
+    <section id="view-app" class="flex flex-col items-center">
+      <div id="device-frame" class="mobile-frame bg-[var(--card)] border border-[var(--border)] overflow-hidden flex flex-col relative transition-all">
+        <div id="app-root" class="flex-1 flex flex-col overflow-hidden relative bg-[var(--background)]"></div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 2: CLEAN SCREEN-BY-SCREEN OVERVIEW                   -->
+    <!-- ========================================================= -->
+    <section id="view-screens" class="hidden space-y-6">
+      <div class="max-w-2xl">
+        <h2 class="text-lg font-semibold tracking-tight">Calm, Progressive Screen Architecture</h2>
+        <p class="text-sm text-[var(--muted-foreground)] mt-1 leading-relaxed">
+          All options remain 1–2 taps away via clean menus, subtle disclosures, and expandable rows—keeping primary screens quiet and focused on clear thinking.
+        </p>
+      </div>
+      <div id="screens-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VIEW 3: ALL 52 TECHNIQUE WRITEUPS & LAUNCHER              -->
+    <!-- ========================================================= -->
+    <section id="view-guide" class="hidden space-y-6">
+      <div class="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--border)] pb-5">
+        <div class="max-w-xl">
+          <h2 class="text-lg font-semibold tracking-tight">All 52 Strategic Techniques Explained</h2>
+          <p class="text-sm text-[var(--muted-foreground)] mt-1 leading-relaxed">
+            Every technique from <em>The Decision Book</em> includes a concise plain-English writeup and step-by-step usage note right inside the app.
+          </p>
+        </div>
+        <input id="guide-search" oninput="renderGuideCatalog()" type="text" placeholder="Filter 52 techniques..." class="px-3.5 py-2 rounded-xl text-xs bg-[var(--card)] border border-[var(--border)] w-full sm:w-64 focus:outline-none focus:ring-1 focus:ring-[var(--primary)]" />
+      </div>
+      <div id="guide-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // CLEAN LINE SVG ICONS (ZERO EMOJI CLUTTER)
+    // =========================================================================
+    const ICONS = {
+      spark: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l1.9 5.8L20 10.8l-6.1 1.9L12 18.5l-1.9-5.8L4 10.8l6.1-2L12 3z" stroke-linejoin="round"/></svg>`,
+      book: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 006.5 22H20V2H6.5A2.5 2.5 0 004 4.5v15z" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      journal: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      user: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="8" r="4"/><path d="M5 20c1.5-3.5 4.2-5 7-5s5.5 1.5 7 5" stroke-linecap="round"/></svg>`,
+      search: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5" stroke-linecap="round"/></svg>`,
+      sliders: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="var(--card)"/><circle cx="15" cy="12" r="2" fill="var(--card)"/><circle cx="10" cy="18" r="2" fill="var(--card)"/></svg>`,
+      compass: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><polygon points="16,8 13.5,13.5 8,16 10.5,10.5" stroke-linejoin="round"/></svg>`,
+      chevRight: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      chevDown: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      back: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      dots: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg>`,
+      bookmark: (filled) => `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.75"><path d="M6 4h12a1 1 0 011 1v16l-7-4-7 4V5a1 1 0 011-1z" stroke-linejoin="round"/></svg>`,
+      check: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    };
+
+    const CHAPTERS = {
+      improve_self: { label: "Improve Yourself", short: "Improve Self", axis: "Me · Doing" },
+      understand_self: { label: "Understand Yourself", short: "Know Self", axis: "Me · Thinking" },
+      understand_others: { label: "Understand Others", short: "Know Others", axis: "Others · Thinking" },
+      improve_others: { label: "Improve Others", short: "Lead Others", axis: "Others · Doing" }
+    };
+
+    // =========================================================================
+    // ALL 52 TECHNIQUES WITH CLEAR, THOUGHTFUL END-USER WRITEUPS
+    // =========================================================================
+    const MODELS = [
+      // PART I: IMPROVE YOURSELF (1-13)
+      { id: 1, title: "The Eisenhower Matrix", sub: "How to work more efficiently", cat: "improve_self", engine: "E1", mins: 2, mx: 15, my: 14,
+        keywords: ["urgent","important","overwhelmed","tasks","todo","prioritize","busy","time","deadline","work","focus","efficiency"],
+        writeup: "Inspired by Dwight D. Eisenhower's rule that 'the most urgent decisions are rarely the most important ones,' this method separates loud daily emergencies from meaningful long-term progress. When everything feels pressing, we tend to react to urgent noise while neglecting strategic goals until they become crises. Sorting tasks across Urgency and Importance immediately clarifies what deserves your attention now and what should be scheduled, delegated, or dropped.",
+        howTo: "Add your current tasks and assign each to a quadrant. Complete 'Do First' items one by one, and block dedicated calendar time for 'Schedule' items.",
+        quote: "The most urgent decisions are rarely the most important ones.",
+        seeAlso: [11, 38],
+        cfg: { quads: ["Schedule", "Do First", "Drop / Later", "Delegate"],
+          qSub: ["Important, not urgent", "Urgent & important", "Neither", "Urgent, not important"],
+          sample: [{t:"Draft Q4 product strategy",q:0},{t:"Resolve payment bug",q:1},{t:"Clean old archive folders",q:2},{t:"Coordinate travel bookings",q:3}] } },
+
+      { id: 2, title: "The SWOT Analysis", sub: "How to find the right solution", cat: "improve_self", engine: "E1", mins: 3, mx: 26, my: 38,
+        keywords: ["swot","strengths","weaknesses","opportunities","threats","strategy","evaluate","project","business","career","plan"],
+        writeup: "Developed out of Stanford research on why organizations drift from their goals, SWOT brings internal reality and external reality into a single view. It separates what you control directly (your Strengths and Weaknesses) from the environment around you (Opportunities and Threats). Used thoughtfully on either a business or personal decision, it shows how to lean on your strengths while shielding your blind spots.",
+        howTo: "Add key points under each of the four panes, then ask how your top strength can capture your best opportunity.",
+        quote: "Fluctuations and imbalances are often the primary sources of creativity.",
+        seeAlso: [6, 48],
+        cfg: { quads: ["Strengths", "Opportunities", "Weaknesses", "Threats"],
+          qSub: ["Internal advantage", "External opening", "Internal limitation", "External risk"],
+          sample: [{t:"Fast product iteration speed",q:0},{t:"Growing demand for calm tools",q:1},{t:"Small marketing reach today",q:2},{t:"Larger incumbent bundling features",q:3}] } },
+
+      { id: 3, title: "The BCG Box", sub: "How to evaluate costs and benefits", cat: "improve_self", engine: "E1", mins: 2, mx: 14, my: 35,
+        keywords: ["bcg","invest","portfolio","money","cost","benefit","profit","market share","growth","products","cash cow","roi"],
+        writeup: "Created by the Boston Consulting Group, this matrix evaluates a portfolio of projects, products, or investments by comparing current traction (Market Share) against future upside (Growth). High-share, low-growth 'Cash Cows' fund high-growth 'Stars,' while 'Question Marks' demand careful bets and low-potential 'Dogs' should be sunset unless they carry non-financial value.",
+        howTo: "Place each project or investment into one of the four boxes to see whether your portfolio is balanced or stretched thin.",
+        quote: "The most dangerous words in investing are 'this time it's different.'",
+        seeAlso: [4, 48],
+        cfg: { quads: ["Question Marks", "Stars", "Dogs", "Cash Cows"],
+          qSub: ["High growth, low share", "High growth & share", "Low growth & share", "Low growth, high share"],
+          sample: [{t:"Experimental AI workflow",q:0},{t:"Core mobile app",q:1},{t:"Legacy desktop add-on",q:2},{t:"Established annual retainers",q:3}] } },
+
+      { id: 4, title: "Project Portfolio Matrix", sub: "How to maintain an overview", cat: "improve_self", engine: "E1", mins: 3, mx: 18, my: 31,
+        keywords: ["juggling","multiple projects","side hustle","slasher","balance","budget","vision","learning","overload"],
+        writeup: "When you juggle multiple work and personal commitments simultaneously, it is easy to stay busy without moving toward your overarching vision. This matrix maps every active project across two honest questions: 'How much does this advance my long-term vision?' and 'How much am I genuinely learning?' Together, those axes reveal which commitments hit the jackpot and which ones quietly drain your energy.",
+        howTo: "Sort every active commitment into the four zones; delegate routine vision-aligned work and step away from low-learning detours.",
+        quote: "The greatest danger is not that our aim is too high and we miss it, but that it is too low and we reach it.",
+        seeAlso: [1, 3],
+        cfg: { quads: ["Interesting Detour", "Jackpot", "Drop / Reject", "Delegate"],
+          qSub: ["High learning, low vision", "High learning & vision", "Low on both", "High vision, low learning"],
+          sample: [{t:"Side hardware tinker project",q:0},{t:"Launching core studio product",q:1},{t:"Unfocused committee admin",q:2},{t:"Routine monthly bookkeeping",q:3}] } },
+
+      { id: 5, title: "The John Whitmore Model", sub: "Am I pursuing the right goal?", cat: "improve_self", engine: "E4", mins: 2, mx: 34, my: 20,
+        keywords: ["goal","smart","target","ambition","resolution","habit","motivation","marathon","objective"],
+        writeup: "Executive coach John Whitmore emphasizes separating a 'Final Goal' (such as running a marathon) from a controllable 'Performance Goal' (jogging 30 minutes each morning). Vague or unattainable goals sap motivation, while unchallenging ones fail to inspire effort. Testing a goal against Whitmore's structured checklist—Specific, Measurable, Attainable, Relevant, Time-phased, plus Ethical and Agreed—turns wishful thinking into a clear commitment.",
+        howTo: "Check off each criterion your goal currently satisfies; refine your wording on any unchecked line before starting.",
+        quote: "Everything should be made as simple as possible, but no simpler.",
+        seeAlso: [14, 24],
+        cfg: { mode: "whitmore", items: ["Specific — Clear final outcome and daily habit", "Measurable — Concrete indicator of progress", "Attainable — Realistic within your direct control", "Relevant & Challenging — Genuinely energizing", "Time-Phased — Anchored to a clear date", "Positive & Ethical — Stated constructively (PURE)", "Agreed & Recorded — Written down and aligned (CLEAR)"] } },
+
+      { id: 6, title: "The Rubber Band Model", sub: "How to deal with a dilemma", cat: "improve_self", engine: "E2", mins: 2, mx: 20, my: 20,
+        keywords: ["dilemma","stuck","two options","torn","offer","move","city","stay or leave","quit","pros and cons","choice","either"],
+        writeup: "Conventional 'pros and cons' lists often fail when you are torn between two attractive life choices—such as changing careers or relocating—because they force a negative framing. The Rubber Band Model treats a dilemma constructively by asking two positive questions: 'What is holding me here?' and 'What is pulling me forward?' Seeing both sets of forces side by side turns anxious hesitation into a clear view of what you value most.",
+        howTo: "Add the anchors holding you in place and the magnets pulling you toward the new path, setting each item's strength from 1 to 5.",
+        quote: "A peacefulness follows any decision, even the wrong one.",
+        seeAlso: [2, 13, 24],
+        cfg: { leftLabel: "What Is Holding Me", rightLabel: "What Is Pulling Me",
+          sampleLeft: [{t:"Trusted colleagues & steady rhythm",w:4},{t:"Close to family & familiar city",w:3}],
+          sampleRight: [{t:"Steep growth curve & ownership",w:5},{t:"Building something from the ground up",w:4}] } },
+
+      { id: 7, title: "The Feedback Model", sub: "Dealing with compliments and criticisms", cat: "improve_self", engine: "E1", mins: 2, mx: 25, my: 28,
+        keywords: ["feedback","criticism","compliment","review","hurt","insult","praise","improve","advice"],
+        writeup: "Praise can make us complacent, while blunt criticism can bruise our confidence and trigger defensive choices. Rather than labeling feedback simply 'good' or 'bad,' this model crosses how the feedback felt with whether anything actually needs to change—while asking honestly how much of a win or setback was just luck. That structure separates actionable criticism and constructive advice from noise you can calmly set aside.",
+        howTo: "Place recent comments into the four categories so you know exactly which points call for action and which to let go.",
+        quote: "Ask not 'Was it nice?' but 'What can stay as it is, and what needs to change?'",
+        seeAlso: [15, 35],
+        cfg: { quads: ["Advice", "Compliment", "Criticism", "Suggestion"],
+          qSub: ["Positive, still evolve", "Positive, keep doing", "Needs real change", "Safe to live with"],
+          sample: [{t:"Strong deck—now tighten the opening",q:0},{t:"Calm Q&A earned client trust",q:1},{t:"Late handoff slowed QA",q:2},{t:"Minor preference on slide colors",q:3}] } },
+
+      { id: 8, title: "The Family Tree Model", sub: "The contacts you should maintain", cat: "improve_self", engine: "E7", mins: 3, mx: 38, my: 31,
+        keywords: ["clients","referrals","customers","contacts","loyalty","promoter","network","concentration"],
+        writeup: "Instead of complex loyalty surveys, this model asks one revealing question: 'Through whom did this client or friend enter my life, and who would they recommend me to?' Mapping relationships like a branching tree exposes hidden structure. Multiple independent roots signal healthy resilience, whereas a single heavy branch warns of dangerous over-concentration if that one relationship fades.",
+        howTo: "List your key clients or contacts alongside who introduced them to spot your strongest promoters and single-branch risks.",
+        quote: "Boughs with the most branches require the most care—and carry concentration risk.",
+        seeAlso: [29, 37],
+        cfg: { subtype: "tree", sample: [{name:"Priya (Anchor Client)",via:"Direct",tag:"Promoter"},{name:"FinTech Studio",via:"Priya",tag:"Promoter"},{name:"Nordic Retail",via:"Priya",tag:"Passive"},{name:"Marco (Advisor)",via:"Direct",tag:"Promoter"}] } },
+
+      { id: 9, title: "Morphological Box & SCAMPER", sub: "Why you have to be structured to be creative", cat: "improve_self", engine: "E5", mins: 3, mx: 28, my: 25,
+        keywords: ["creative","innovation","brainstorm","new product","feature","scamper","combine","invent","idea"],
+        writeup: "Breakthrough ideas rarely appear out of thin air; Swiss astrophysicist Fritz Zwicky showed they often come from systematically recombining existing traits. In a Morphological Box, you break a concept into core parameters (such as audience, format, and pricing), list options for each, and connect one option per row into a fresh configuration. Pairing this with Bob Eberle's SCAMPER prompts (Substitute, Combine, Adapt, Modify, Put to other use, Eliminate, Reverse) sparks structured originality on demand.",
+        howTo: "Select one trait in each row to form a combined concept, then use the SCAMPER tabs below to refine it.",
+        quote: "Think what nobody yet has thought about that which everybody sees.",
+        seeAlso: [33, 48],
+        cfg: { subtype: "morph", rows: [
+          { param: "Audience", opts: ["Busy Professionals", "Solo Founders", "Product Teams", "Students"], sel: 1 },
+          { param: "Delivery", opts: ["2-Min Interactive", "Audio Brief", "Weekly Digest", "Shared Board"], sel: 0 },
+          { param: "Model", opts: ["Free Offline + Sync", "One-Time Unlock", "Team Workspace", "Open Patron"], sel: 0 },
+          { param: "Edge", opts: ["Zero Typing", "Smart Matcher", "Local Privacy", "Spaced Recall"], sel: 1 }
+        ] } },
+
+      { id: 10, title: "The Esquire Gift Model", sub: "How much to spend on gifts", cat: "improve_self", engine: "E6", mins: 1, mx: 31, my: 23,
+        keywords: ["gift","present","birthday","wedding","anniversary","spend","money","generous","boss","partner"],
+        writeup: "Gift-giving can easily feel awkward when you spend far too little or misjudge the relationship. Adapted from Esquire's famous chart, this lighthearted model calibrates gift value using two simple factors: your relationship to the recipient and how many years you have known them, with natural spikes for major milestones. Its two golden rules: generosity always beats miserliness, and give something you would genuinely enjoy receiving yourself.",
+        howTo: "Choose the relationship, drag the years-known slider, and toggle whether it is a major life milestone.",
+        quote: "Being generous beats being miserly—never be misled by 'That really wasn't necessary.'",
+        seeAlso: [29],
+        cfg: { subtype: "gift" } },
+
+      { id: 11, title: "The Consequences Model", sub: "Why it is important to make decisions promptly", cat: "improve_self", engine: "E6", mins: 2, mx: 24, my: 17,
+        keywords: ["delay","procrastinate","wait","doubt","unsure","uncertainty","early","promptly","hesitate","indecision"],
+        writeup: "Organization theorists Kristian Kreiner and Søren Christensen highlight a central paradox of decision-making: at the start of an initiative, your knowledge is low while the impact of your choices is at its peak; near the end, certainty is high, yet nothing fundamental remains to decide. Postponing out of doubt is an unspoken decision that breeds team uncertainty. If you must wait for a specific fact, communicate that timeline openly; otherwise, decide boldly early.",
+        howTo: "Set where you stand on current Knowledge vs. Decision Impact to see whether waiting helps or silently costs momentum.",
+        quote: "I'd rather regret the things I have done than the things that I haven't.",
+        seeAlso: [1, 41],
+        cfg: { subtype: "consequences" } },
+
+      { id: 12, title: "The Conflict Resolution Model", sub: "How to resolve a conflict elegantly", cat: "improve_self", engine: "E4", mins: 3, mx: 35, my: 34,
+        keywords: ["conflict","argument","fight","dispute","colleague","partner","negotiate","compromise","consensus","angry"],
+        writeup: "Unaddressed disputes harden into deadlock, yet aggressive confrontation leaves resentment behind. Psychologists distinguish six typical conflict responses: three emotional reactions (Escape, Fight, Give Up) and three rational ones (Evade Responsibility, Compromise, and Consensus). While compromise splits the difference so both sides concede something, true Consensus creates a 'third way' developed together where neither side loses.",
+        howTo: "Identify your current reaction pattern on the six-step ladder, then articulate a Third-Way Consensus option.",
+        quote: "Consensus is not backing down halfway—it is inventing a third way together.",
+        seeAlso: [36, 45],
+        cfg: { mode: "conflict", items: ["1. Escape — Avoiding the issue (Lose–Lose)", "2. Fight — Forcing your position (Win–Lose)", "3. Give Up — Retreating to keep peace (Lose–Win)", "4. Evade — Escalating to an outside authority (Risky)", "5. Compromise — Splitting halfway (Partial concession)", "6. Consensus — Co-creating a 'Third Way' (Win–Win)"] } },
+
+      { id: 13, title: "The Crossroads Model", sub: "So what next?", cat: "improve_self", engine: "E6", mins: 4, mx: 41, my: 12,
+        keywords: ["crossroads","life direction","next chapter","lost","future","career change","meaning","where now"],
+        writeup: "Inspired by The Grove's Personal Compass, the Crossroads Model helps when you stand at a major turning point in life or work. Before staring anxiously into the future, it grounds you in five personal coordinates: where you come from, what truly matters to you, whose voices count, what hinders you, and what you fear. From that honest footing, you compare six distinct archetypes of the road ahead.",
+        howTo: "Rate how strongly each of the six classic future roads resonates with your values right now.",
+        quote: "When was the last time you did something for the first time?",
+        seeAlso: [21, 25],
+        cfg: { subtype: "crossroads" } },
+
+      // PART II: UNDERSTAND YOURSELF BETTER (14-30)
+      { id: 14, title: "The Flow Model", sub: "What makes you happy?", cat: "understand_self", engine: "E3", mins: 2, mx: 56, my: 29,
+        keywords: ["happy","happiness","flow","bored","burnout","boreout","stressed","energy","engaged","fulfillment"],
+        writeup: "Psychologist Mihaly Csikszentmihalyi studied thousands of people and found that deep satisfaction rarely comes from passive leisure. Instead, happiness—'Flow'—emerges when we are absorbed in a self-chosen activity with clear goals, immediate feedback, and a challenge level that stretches our skill without overwhelming it. Too much challenge triggers Burnout; too little leads to Boreout.",
+        howTo: "Move the Challenge and Skill sliders for your main activity to see your live position relative to the Flow channel.",
+        quote: "People are happiest when absorbed in a meaningful stretch that makes them lose track of time.",
+        seeAlso: [5, 24],
+        cfg: { subtype: "flow" } },
+
+      { id: 15, title: "The Johari Window", sub: "What others know about you", cat: "understand_self", engine: "E1", mins: 3, mx: 74, my: 36,
+        keywords: ["self awareness","blind spot","personality","others think","perception","trust","johari","reputation"],
+        writeup: "Created by psychologists Joseph Luft and Harry Ingham, this four-pane window maps self-awareness against how others experience you. Traits both you and others recognize form your open 'Arena'; things you conceal sit in your 'Hidden' pane; habits others notice that you miss form your 'Blind Spot'; and latent strengths await in the 'Unknown.' Honest feedback shrinks blind spots, while candor deepens trust.",
+        howTo: "Place personal traits and behaviors into the four panes to clarify what to share openly and where to invite feedback.",
+        quote: "Feedback in the blind-spot pane can sting—and be the most illuminating.",
+        seeAlso: [7, 19],
+        cfg: { quads: ["Open Arena", "Blind Spot", "Hidden Façade", "Unknown"],
+          qSub: ["Known to me & others", "Others see, I miss", "I know, kept private", "Unexplored potential"],
+          sample: [{t:"Dependable under pressure",q:0},{t:"Speaking fast when stressed",q:1},{t:"Doubts before big launches",q:2},{t:"Untested mentoring skill",q:3}] } },
+
+      { id: 16, title: "Cognitive Dissonance Model", sub: "Why people smoke when they know it's unhealthy", cat: "understand_self", engine: "E2", mins: 2, mx: 55, my: 20,
+        keywords: ["guilt","hypocrisy","habit","bad conscience","excuse","smoking","procrastination","values","dissonance"],
+        writeup: "Leon Festinger coined 'cognitive dissonance' for the inner tension we feel when our actions clash with our beliefs. Rather than changing the action, people instinctively invent self-justifications ('I work late every night only until this quarter ends') to quiet their conscience. The only honest exit from dissonance is to drop the excuse and consciously change either your daily behavior or your stated attitude.",
+        howTo: "Contrast the belief you claim to hold with the behavior you actually repeat to expose—and resolve—the gap.",
+        quote: "Self-justification lets us sleep at night at the cost of genuine change.",
+        seeAlso: [35],
+        cfg: { leftLabel: "My Stated Belief", rightLabel: "My Actual Habit",
+          sampleLeft: [{t:"Deep rest and family dinners come first",w:5}],
+          sampleRight: [{t:"Answering work messages at 10pm nightly",w:4}] } },
+
+      { id: 17, title: "The Music Matrix", sub: "What your taste in music says about you", cat: "understand_self", engine: "E1", mins: 2, mx: 78, my: 18,
+        keywords: ["music","taste","culture","identity","style","bands","art","authentic","mainstream"],
+        writeup: "Cultural preferences often mirror how we wish to be seen. By plotting favorite artists, creators, or cultural touchstones along Mainstream vs. Avantgarde and Designed vs. Authentic, this playful matrix reveals whether you gravitate toward polished craft, raw storytelling, popular energy, or experimental edges.",
+        howTo: "Add favorite artists, books, or creative inspirations to see which cultural quadrant anchors your taste.",
+        quote: "Our cultural favorites quietly map how we balance belonging and individuality.",
+        seeAlso: [20, 34],
+        cfg: { quads: ["Mainstream · Designed", "Avantgarde · Designed", "Mainstream · Authentic", "Avantgarde · Authentic"],
+          qSub: ["Polished pop craft", "Conceptual art lab", "Classic roots & soul", "Raw indie edge"],
+          sample: [{t:"Daft Punk",q:0},{t:"Brian Eno",q:1},{t:"Bruce Springsteen",q:2},{t:"Bon Iver",q:3}] } },
+
+      { id: 18, title: "The Unimaginable Model", sub: "What do you believe in that you cannot prove?", cat: "understand_self", engine: "E1", mins: 2, mx: 76, my: 23,
+        keywords: ["belief","faith","proof","evidence","assumptions","science","philosophy","dogma"],
+        writeup: "From Adam Smith to Thomas Kuhn, thinkers have warned against mistaking our favorite mental models for objective reality. Some truths are provable yet hard to picture (like black holes), while many everyday convictions ('people are inherently selfish' or 'this market always rebounds') cannot be proven yet quietly dictate how we act. Separating provable facts from unprovable assumptions keeps your thinking humble and sharp.",
+        howTo: "Sort the core beliefs guiding your decision across Provable vs. Unprovable and Imaginable vs. Unimaginable.",
+        quote: "Models help us see connections—until we blindly mistake the model for reality.",
+        seeAlso: [41, 43],
+        cfg: { quads: ["Provable & Imaginable", "Unprovable & Imaginable", "Provable & Unimaginable", "Unprovable & Unimaginable"],
+          qSub: ["Observable facts", "Guiding personal faith", "Counter-intuitive science", "Pure mystery"],
+          sample: [{t:"Unit economics & cash runway",q:0},{t:"Great craft eventually wins word-of-mouth",q:1},{t:"Exponential compounding",q:2},{t:"Long-term macro turning points",q:3}] } },
+
+      { id: 19, title: "The Uffe Elbæk Model", sub: "How to get to know yourself", cat: "understand_self", engine: "E3", mins: 2, mx: 75, my: 15,
+        keywords: ["personality","self","who am i","team vs individual","body vs mind","strengths","barometer","character"],
+        writeup: "Developed by Kaospilot founder Uffe Elbæk, this personal barometer maps your temperament across opposing poles—such as Team vs. Individual, Form vs. Content, and Brain vs. Body—under one strict rule: each axis must total ten points. Because you cannot score ten on both ends simultaneously, it forces honest trade-offs between how you operate today and how you aspire to show up.",
+        howTo: "Adjust the sliders quickly on instinct to see the shape of your personal profile.",
+        quote: "Each axis totals ten—choosing one pole reveals what you trade off on the other.",
+        seeAlso: [15, 24],
+        cfg: { subtype: "elbaek" } },
+
+      { id: 20, title: "The Fashion Model", sub: "How we dress", cat: "understand_self", engine: "E1", mins: 2, mx: 61, my: 38,
+        keywords: ["dress","clothes","fashion","brand","image","wardrobe","appearance","signal"],
+        writeup: "Whether selecting a personal wardrobe or shaping a brand's visual identity, every style choice sends an immediate social signal. Combining Eric Sommier's and Esquire's style axes, this matrix plots expression across Casual vs. Formal and Old-School Heritage vs. Contemporary Hip—highlighting effortless 'neutral zone' classics alongside bold statements.",
+        howTo: "Position wardrobe staples or brand aesthetics across the four style quadrants.",
+        quote: "Elegance is the art of dressing with intention without looking dressed up.",
+        seeAlso: [17, 44],
+        cfg: { quads: ["Casual · Classic", "Formal · Classic", "Casual · Contemporary", "Formal · Contemporary"],
+          qSub: ["Relaxed heritage", "Traditional tailored", "Effortless street", "Modern architectural"],
+          sample: [{t:"Knit sweater & loafers",q:0},{t:"Unbuttoned wool blazer",q:1},{t:"Crisp tee & overshirt",q:2},{t:"Open-collar suit & clean sneakers",q:3}] } },
+
+      { id: 21, title: "The Energy Model", sub: "Are you living in the here and now?", cat: "understand_self", engine: "E3", mins: 1, mx: 74, my: 26,
+        keywords: ["present","past","future","worry","nostalgia","mindfulness","focus","here and now","anxiety"],
+        writeup: "Without judgment, this model asks how your daily mental attention divides across three time zones: remembering the Past, focusing on the Present ('Here & Now'), and imagining—or worrying about—the Future. Heavy past focus creates a nostalgic, memory-driven lens; heavy future focus creates a restless, dream-driven lens; strong present focus anchors calm execution.",
+        howTo: "Slide your Past and Future percentages; Present energy adjusts automatically so all three total 100%.",
+        quote: "You cannot change the past, yet you can spoil the present by worrying about the future.",
+        seeAlso: [13, 14],
+        cfg: { subtype: "energy" } },
+
+      { id: 22, title: "The SuperMemo Model", sub: "How to remember everything you have ever learned", cat: "understand_self", engine: "E6", mins: 2, mx: 60, my: 16,
+        keywords: ["memory","remember","forget","study","learn","spaced repetition","retention","flashcard"],
+        writeup: "Memory researcher Piotr Woźniak showed that long-term memory depends on retrievability (how easily an idea surfaces) and stability (how deeply it is anchored). Reviewing new knowledge right at the moment your brain is about to forget it flattens the forgetting curve dramatically. Refreshing an insight at 1, 10, 30, and 60 days locks lessons—and decision takeaways—into lasting intuition.",
+        howTo: "Write down the core insight you want to keep, and lock in the 1, 10, 30, and 60-day recall intervals.",
+        quote: "It is not what you read once, it is what you retrieve at the right interval.",
+        seeAlso: [35],
+        cfg: { subtype: "supermemo" } },
+
+      { id: 23, title: "The Political Compass", sub: "What political parties stand for", cat: "understand_self", engine: "E1", mins: 2, mx: 63, my: 33,
+        keywords: ["politics","policy","ideology","left","right","liberal","values","society","compass"],
+        writeup: "Reducing complex civic or organizational debates to a single 'left vs. right' line hides crucial differences. The Political Compass separates economic philosophy (Cooperative/Public vs. Market/Private) from governance style (Individual Autonomy vs. Central Authority), letting you map policies, institutions, or your own evolving principles clearly.",
+        howTo: "Place viewpoints or governance options across the two independent axes.",
+        quote: "Separating economic structure from personal autonomy clarifies muddled debates.",
+        seeAlso: [34],
+        cfg: { quads: ["Public · Directive", "Market · Directive", "Public · Autonomous", "Market · Autonomous"],
+          qSub: ["Centralized collective", "Regulated enterprise", "Civic commons", "Decentralized market"],
+          sample: [{t:"Standardized national transit",q:0},{t:"Strategic industrial charters",q:1},{t:"Open-source public digital goods",q:2},{t:"Permissionless solo commerce",q:3}] } },
+
+      { id: 24, title: "Personal Performance Model", sub: "How to recognise whether you should change your job", cat: "understand_self", engine: "E3", mins: 2, mx: 61, my: 12,
+        keywords: ["quit job","change job","unhappy at work","career","bored at work","resign","have to","want to","able to"],
+        writeup: "Job dissatisfaction feels vague until you measure it across three simple daily questions from 1 to 10: 'Have to' (how much is imposed on me?), 'Able to' (how well does it match my skills?), and 'Want to' (how much do I genuinely care about this work?). Plotted on three axes, your scores form a triangular 'sail.' If 'Have to' dominates week after week while 'Want to' stays tiny, it is a clear signal to reshape or change your role.",
+        howTo: "Score your current work across Have To, Able To, and Want To to inspect the shape of your career sail.",
+        quote: "If your sail stays stuck in high obligation and low desire for three weeks, listen to it.",
+        seeAlso: [6, 14],
+        cfg: { subtype: "sail" } },
+
+      { id: 25, title: "The Making-Of Model", sub: "To determine your future, first understand your past", cat: "understand_self", engine: "E6", mins: 3, mx: 64, my: 27,
+        keywords: ["past","history","retrospective","reflection","lessons","foundation","journey","milestone"],
+        writeup: "Strategic planning usually fixates on the future while forgetting that every future stands on the foundation of our past. Inspired by visual history mapping, the Making-Of Model looks back across a chosen chapter—a year, a project, or a company's journey—through five lenses: key people, original goals, obstacles overcome, real successes, and enduring lessons. That clarity reveals what deserves to cross the bridge with you into the next chapter.",
+        howTo: "Reflect on your recent timeframe and note the core lesson you are carrying forward.",
+        quote: "Build a deliberate bridge from what shaped you to where you are heading next.",
+        seeAlso: [13, 35],
+        cfg: { subtype: "makingof" } },
+
+      { id: 26, title: "The Personal Potential Trap", sub: "Why it is better not to expect anything", cat: "understand_self", engine: "E3", mins: 2, mx: 71, my: 28,
+        keywords: ["expectations","pressure","imposter","disappointment","overpromise","underdeliver","talent","burnout"],
+        writeup: "Early praise and effortless wins can quietly set a trap when your own expectations and other people's expectations soar far above your current day-to-day output. As soon as perceived promise diverges sharply from actual results, pressure and paralysis set in. The antidote is disciplined humility: lower performative expectations—promise 80, and quietly deliver 120.",
+        howTo: "Compare your Self-Expectations, Others' Expectations, and Actual Output to spot whether an expectation gap is building.",
+        quote: "Escape the potential trap with one habit: promise 80 and deliver 120.",
+        seeAlso: [14, 24],
+        cfg: { subtype: "potential" } },
+
+      { id: 27, title: "The Hype Cycle", sub: "How to identify the next big thing", cat: "understand_self", engine: "E4", mins: 2, mx: 70, my: 20,
+        keywords: ["hype","trend","next big thing","technology","bubble","ai","adoption","relationship","disillusionment"],
+        writeup: "Gartner's Hype Cycle traces the emotional arc of almost every new technology—and even new ventures or relationships. An exciting Trigger rockets to a Peak of Inflated Expectations ('this changes everything!'), plunges into a Trough of Disillusionment when flaws appear, and then quietly climbs the Slope of Enlightenment as practical 2.0 uses mature into a steady Plateau of Productivity.",
+        howTo: "Select which of the five phases best describes the trend, project, or partnership you are evaluating.",
+        quote: "Lasting value usually emerges quietly after the initial hype has faded.",
+        seeAlso: [42],
+        cfg: { mode: "single_stage", items: ["1. Trigger — Exciting debut, high buzz, unproven", "2. Peak of Inflated Expectations — Everyone talking, cracks appearing", "3. Trough of Disillusionment — Cynicism sets in as early versions disappoint", "4. Slope of Enlightenment — Practical 2.0 workflows quietly start working", "5. Plateau of Productivity — Reliable, everyday mainstream utility"] } },
+
+      { id: 28, title: "The Subtle Signals Model", sub: "Why nuances matter", cat: "understand_self", engine: "E1", mins: 2, mx: 56, my: 35,
+        keywords: ["communication","meetings","talk","nuance","colleagues","influence","emails","team morale"],
+        writeup: "MIT Media Lab research on creative teams found that how people communicate—tone, informal check-ins, and responsiveness—often predicts team health better than org charts. Mapping your recurring interactions by Contact Frequency vs. Real Impact reveals both noisy habits that consume hours with minimal effect and rare, high-leverage conversations you should make more room for.",
+        howTo: "Place your regular meetings, channels, or advisors into the four frequency-by-effect boxes.",
+        quote: "Healthy teams thrive on two levels: what we say, and the warmth with which we say it.",
+        seeAlso: [8, 29],
+        cfg: { quads: ["Frequent · Low Effect", "Frequent · High Effect", "Rare · Low Effect", "Rare · High Effect"],
+          qSub: ["Noisy routine chatter", "Core creative allies", "Background static", "High-value mentors"],
+          sample: [{t:"Unfocused daily status thread",q:0},{t:"Morning 15-min design/dev sync",q:1},{t:"Generic industry group chat",q:2},{t:"Monthly 1:1 with trusted advisor",q:3}] } },
+
+      { id: 29, title: "The Network Target Model", sub: "What your friends say about you", cat: "understand_self", engine: "E7", mins: 3, mx: 68, my: 23,
+        keywords: ["friends","family","circle","relationships","social","loneliness","community","contacts"],
+        writeup: "Our closest circle shapes our perspective far more than we realize. This model organizes the people in your life across four groups—Friends, Family, Colleagues, and Acquaintances—and four concentric time rings (Daily, Weekly, Monthly, Yearly). Seeing who actually receives your time versus who matters most makes it easy to reconnect intentionally.",
+        howTo: "Add key people in your life and note their group and contact cadence to see who deserves more intentional time.",
+        quote: "Look closely at who gets your weekly hours—and who you wish saw more of you.",
+        seeAlso: [8, 37],
+        cfg: { subtype: "bullseye", sample: [{name:"Maya",group:"Friends",ring:"Weekly"},{name:"Parents",group:"Family",ring:"Weekly"},{name:"Sam (Co-founder)",group:"Colleagues",ring:"Daily"},{name:"Elena (Mentor)",group:"Acquaintances",ring:"Monthly"}] } },
+
+      { id: 30, title: "Superficial Knowledge Model", sub: "Everything you don't need to know", cat: "understand_self", engine: "E1", mins: 1, mx: 77, my: 32,
+        keywords: ["trivia","conversation","small talk","impress","knowledge","fun","icebreaker"],
+        writeup: "A witty reminder from the book not to take every piece of information too seriously: facts and skills can either charm a room or put everyone to sleep. Crossing Easy vs. Difficult to learn against Embarrassing vs. Impressive highlights high-delight, low-effort conversational gems while poking gentle fun at obscure rabbit holes.",
+        howTo: "Sort topics, skills, or talking points across Easy/Hard and Impressive/Embarrassing.",
+        quote: "Knowledge can inspire people—or bore them. Start in the top-right corner.",
+        seeAlso: [18],
+        cfg: { quads: ["Easy · Embarrassing", "Easy · Impressive", "Hard · Embarrassing", "Hard · Impressive"],
+          qSub: ["Guilty trivia", "Effortless charm", "Obscure rabbit-hole", "Deep craft mastery"],
+          sample: [{t:"Celebrity drama timelines",q:0},{t:"Cooking one signature dish well",q:1},{t:"Memorizing error codes",q:2},{t:"Explaining hard ideas simply",q:3}] } },
+
+      // PART III: UNDERSTAND OTHERS BETTER (31-45)
+      { id: 31, title: "The Swiss Cheese Model", sub: "How mistakes happen", cat: "understand_others", engine: "E4", mins: 3, mx: 61, my: 66,
+        keywords: ["mistake","bug","outage","incident","accident","postmortem","error","safety","prevent","failure"],
+        writeup: "Psychologist James Reason compared safety defences in medicine, aviation, and engineering to stacked slices of Swiss cheese. Every human layer—skill execution, process rules, system design, and timing—has natural holes (slip-ups, forgotten steps, or wrong assumptions). A single mistake is harmless if the next layer catches it; disaster strikes only when holes across every slice align at once.",
+        howTo: "Check off each defence layer currently protecting your project; closing the hole in even one slice stops cascading failure.",
+        quote: "Major failures happen only when holes align across every slice of defence.",
+        seeAlso: [35, 51],
+        cfg: { mode: "swiss", items: ["Execution Slice — Simple checklist prevents everyday slip-ups", "Process Slice — Automated check catches forgotten steps (black-outs)", "Design Slice — Second pair of eyes challenges core assumptions", "Timing Slice — Calm buffer protects against last-minute rush"] } },
+
+      { id: 32, title: "The Maslow Pyramids", sub: "What you actually need, what you actually want", cat: "understand_others", engine: "E4", mins: 2, mx: 76, my: 46,
+        keywords: ["needs","wants","maslow","motivation","desire","money","status","security","purpose","customers"],
+        writeup: "Abraham Maslow grouped human motivation into foundational needs (Physiological health, Security, and Social belonging—which quiet down once met) and open-ended growth aspirations (Recognition and Self-Actualisation—which never fully saturate). In modern life and product design, people often chase status and recognition hardest while neglecting the foundational rest or belonging they actually need.",
+        howTo: "Mark which tiers of your foundational and growth needs are genuinely nourished today.",
+        quote: "In affluent societies, what we chase hardest is often what we need least.",
+        seeAlso: [14, 44],
+        cfg: { mode: "maslow", items: ["1. Physiological — Sleep, health, sustainable daily energy", "2. Security — Financial runway, safe home, dependability", "3. Social Belonging — Close friendships, partner, community", "4. Recognition — Respect, fair reward, visible impact", "5. Self-Actualisation — Creative autonomy, mastery, purpose"] } },
+
+      { id: 33, title: "Thinking Outside the Box", sub: "How to come up with brilliant ideas", cat: "understand_others", engine: "E5", mins: 2, mx: 62, my: 53,
+        keywords: ["outside the box","stuck","breakthrough","creative","puzzle","constraints","assumptions","innovate"],
+        writeup: "In the famous nine-dot puzzle, connecting all nine dots with four straight continuous lines is impossible only because solvers invent an imaginary boundary around the outer dots. Real-world deadlocks work the same way—we obey unstated industry or personal assumptions nobody actually requires. Stepping into the overlap between order and novelty starts by naming and dropping one self-imposed rule.",
+        howTo: "Toggle the 9-dot visual solution, then write down one imaginary rule you can drop in your current challenge.",
+        quote: "Breakthroughs begin the moment you notice the boundary is self-imposed.",
+        seeAlso: [9],
+        cfg: { subtype: "ninedot" } },
+
+      { id: 34, title: "Sinus Milieu & Bourdieu Models", sub: "Where you belong", cat: "understand_others", engine: "E1", mins: 2, mx: 74, my: 43,
+        keywords: ["audience","segment","demographics","culture","class","market research","customers","habit","belong"],
+        writeup: "Income brackets alone rarely explain why people adopt—or resist—an idea. Combining sociological Sinus Milieus with Pierre Bourdieu's map of Economic vs. Cultural Capital shows how deeply habits, values, and social identity shape taste. Understanding whether an audience values tradition, pragmatic status, or creative reorientation helps you meet people where they actually live.",
+        howTo: "Map customer segments or communities across Cultural and Economic orientation.",
+        quote: "Habit and belonging are often stronger than abstract promises of improvement.",
+        seeAlso: [17, 44],
+        cfg: { quads: ["Cultural Explorers", "Established Cosmopolitans", "Grounded Traditionalists", "Pragmatic Achievers"],
+          qSub: ["Idea & craft driven", "High cultural & economic", "Stability & custom", "Outcome & status driven"],
+          sample: [{t:"Independent writers & designers",q:0},{t:"Executive patrons & founders",q:1},{t:"Long-standing local guilds",q:2},{t:"Fast-scaling commercial operators",q:3}] } },
+
+      { id: 35, title: "Double-Loop Learning Model", sub: "How to learn from your mistakes", cat: "understand_others", engine: "E6", mins: 3, mx: 68, my: 49,
+        keywords: ["repeat mistake","habit","root cause","learn","retrospective","pattern","blind spot","why"],
+        writeup: "Chris Argyris and Donald Schön showed why smart people and teams repeat the same mistakes. 'Single-loop learning' merely tweaks tactics when a result disappoints, leaving deeper assumptions untouched. 'Double-loop learning' steps back as a second-order observer to question the gap between our 'espoused theory' (what we claim to value) and our 'theory-in-use' (the hidden beliefs actually driving our actions).",
+        howTo: "Write down the hidden belief or rule behind a recurring setback and reframe it at the root.",
+        quote: "Don't just adjust your actions—question the deeper assumption steering them.",
+        seeAlso: [16, 31],
+        cfg: { subtype: "doubleloop" } },
+
+      { id: 36, title: "The AI Model (Appreciative Inquiry)", sub: "What kind of discussion type are you?", cat: "understand_others", engine: "E1", mins: 2, mx: 55, my: 43,
+        keywords: ["meeting","brainstorm","negativity","criticism","yes and","team culture","discussion","morale"],
+        writeup: "Management scholar David Cooperrider observed that opening a meeting with 'What is broken?' immediately puts people on the defensive and kills fragile new ideas. Appreciative Inquiry (AI) starts instead with 'What is working well, and how can we build on it?' Tracking whether voices in a room use 'No!', 'No, because...', 'Yes, but...', or 'Yes, and...' transforms group energy.",
+        howTo: "Capture key arguments or reactions in your discussion and shift 'Yes, but...' critiques into 'Yes, and...' experiments.",
+        quote: "Fragile early ideas grow through 'Yes, and...' before they are ready for surgery.",
+        seeAlso: [7, 50],
+        cfg: { quads: ["No, because...", "Yes, and...", "No!", "Yes, but..."],
+          qSub: ["Constructive caution", "Appreciative builder", "Blunt blocker", "Polite fault-finder"],
+          sample: [{t:"Server cost rises if uncached",q:0},{t:"Cache locally first so it's instant & free",q:1},{t:"We never change navigation",q:2},{t:"Clean layout, but mobile needs testing",q:3}] } },
+
+      { id: 37, title: "The Small-World Model", sub: "How small the world really is", cat: "understand_others", engine: "E7", mins: 2, mx: 56, my: 48,
+        keywords: ["intro","introduction","networking","reach","six degrees","viral","marketing","contact","investor"],
+        writeup: "Social psychologist Stanley Milgram demonstrated that almost any two people on earth are linked by six or fewer personal acquaintances. Whether you are seeking a mentor, a key customer, or word-of-mouth traction, cold outreach is rarely the shortest path—mapping two or three warm connectors bridges astonishing distance quickly.",
+        howTo: "Sketch the 2–3 trusted intermediaries linking you to the person or community you want to reach.",
+        quote: "Almost anyone you hope to reach is three thoughtful introductions away.",
+        seeAlso: [8, 29],
+        cfg: { subtype: "chain", sample: ["You", "Trusted Colleague (Aarav)", "Portfolio Founder", "Target Partner"] } },
+
+      { id: 38, title: "The Pareto Principle (80/20)", sub: "Why 80% of output is achieved with 20% of input", cat: "understand_others", engine: "E2", mins: 2, mx: 67, my: 56,
+        keywords: ["80/20","pareto","leverage","impact","focus","productivity","results","vital few","revenue"],
+        writeup: "Economist Vilfredo Pareto noticed a striking imbalance that recurs across work, revenue, and habits: roughly 20% of inputs generate 80% of meaningful results, while the remaining 80% of effort produces only marginal gains. Identifying and protecting your 'vital 20%' is one of the fastest ways to multiply impact without working longer hours.",
+        howTo: "Separate your highest-leverage 20% drivers on the left from the low-yield 80% busywork on the right.",
+        quote: "Twenty percent of focused effort routinely drives eighty percent of real outcomes.",
+        seeAlso: [1, 39],
+        cfg: { leftLabel: "Vital 20% (High Leverage)", rightLabel: "Trivial 80% (Low Return)",
+          sampleLeft: [{t:"Direct user interviews & core UX polish",w:5},{t:"Instant problem-to-method accuracy",w:5}],
+          sampleRight: [{t:"Tweaking secondary badge styles",w:1},{t:"Long unscheduled status meetings",w:1}] } },
+
+      { id: 39, title: "The Long-Tail Model", sub: "How the internet is transforming the economy", cat: "understand_others", engine: "E7", mins: 2, mx: 69, my: 64,
+        keywords: ["niche","catalog","long tail","ecommerce","content","seo","marketplace","bestseller","variety"],
+        writeup: "Chris Anderson showed how digital distribution flips Pareto's rule on its head: when shelf space costs almost nothing, thousands of specific niche offerings ('the Long Tail') can collectively rival or outsell a handful of crowded mass-market blockbusters. Knowing whether your product wins through blockbuster scale or deep niche specificity keeps positioning crisp.",
+        howTo: "Clarify the underserved niche vulnerability you are solving vs. the crowded mainstream alternative.",
+        quote: "Specificity wins in the Long Tail when everyone else crowds the middle.",
+        seeAlso: [38, 42],
+        cfg: { subtype: "longtail" } },
+
+      { id: 40, title: "The Monte Carlo Simulation", sub: "Why we can only approximate a definitive outcome", cat: "understand_others", engine: "E8", mins: 2, mx: 71, my: 72,
+        keywords: ["probability","forecast","estimate","risk","simulation","budget","timeline","uncertain","odds","monte carlo"],
+        writeup: "Single-number forecasts for timelines, budgets, or revenue almost always mislead because real life involves randomness. Named after Monte Carlo's probability tables, this method replaces guesswork with hundreds of randomized trials between your pessimistic, most-likely, and optimistic bounds—giving you realistic P10, Median (P50), and P90 confidence ranges.",
+        howTo: "Set your Worst, Most Likely, and Best-Case numbers and run 1,000 simulated trials to inspect your probability spread.",
+        quote: "Good forecasts express honest probability ranges rather than false precision.",
+        seeAlso: [41, 43],
+        cfg: { subtype: "montecarlo" } },
+
+      { id: 41, title: "The Black Swan Model", sub: "Why your experiences don't make you any wiser", cat: "understand_others", engine: "E7", mins: 3, mx: 77, my: 67,
+        keywords: ["black swan","unexpected","shock","crisis","crash","tail risk","antifragile","resilience","surprise"],
+        writeup: "Borrowing Bertrand Russell's parable and Nassim Nicholas Taleb's thesis, the Black Swan warns that years of calm past data never rule out rare, high-impact shocks—just as Europeans assumed all swans were white until visiting Australia. While you cannot predict exact Black Swans, you can make your plans resilient by removing single points of catastrophic fragility.",
+        howTo: "Name the unspoken 'everything stays calm' assumption in your plan and define a concrete buffer.",
+        quote: "We cannot predict the shock, but we can stop building brittle pillars.",
+        seeAlso: [18, 40],
+        cfg: { subtype: "blackswan" } },
+
+      { id: 42, title: "The Chasm – Diffusion Model", sub: "Why everybody has an iPod", cat: "understand_others", engine: "E4", mins: 2, mx: 71, my: 76,
+        keywords: ["launch","startup","adoption","chasm","early adopters","mainstream","growth","marketing","traction"],
+        writeup: "Geoffrey Moore extended classic sociology diffusion research to explain why promising products stall right after early buzz. Enthusiastic Innovators and Early Adopters love novelty, whereas the pragmatic Early Majority waits for proven reliability and social proof. Between those two groups yawns 'The Chasm'—crossed only by winning one focused reference niche completely first.",
+        howTo: "Select where your idea or product currently sits along the five-stage adoption curve.",
+        quote: "Enthusiasts buy promise; the pragmatic majority buys proven, whole solutions.",
+        seeAlso: [27, 39],
+        cfg: { mode: "single_stage", items: ["1. Innovators — Tinkering early enthusiasts testing raw v1", "2. Early Adopters — Visionaries excited by fresh advantage", "3. The Chasm — Early buzz plateaus before mainstream trust", "4. Early Majority — Pragmatists adopting proven standards", "5. Late Majority & Sceptics — Risk-averse holdouts"] } },
+
+      { id: 43, title: "The Black Box Model", sub: "Why faith is replacing knowledge", cat: "understand_others", engine: "E4", mins: 2, mx: 76, my: 60,
+        keywords: ["ai","algorithm","complex","opaque","trust","audit","vendor","black box","understand"],
+        writeup: "Modern finance, software, and AI surround us with 'black boxes'—fast, complex systems whose inner workings we cannot fully inspect even when experts try to explain them. When inner transparency disappears, blind trust becomes dangerous unless you rigorously verify inputs, incentives, measurable outputs, and your own exit switch.",
+        howTo: "Audit any complex tool, vendor, or model against these four black-box safety checks before relying on it.",
+        quote: "When you cannot see inside the box, test its incentives, inputs, and exit doors.",
+        seeAlso: [18, 41],
+        cfg: { mode: "swiss", items: ["Input Control — Do I understand and control what goes in?", "Aligned Incentives — Does the provider win only when I win?", "Empirical Verification — Can I test outputs against ground truth?", "Clean Fallback — Can I switch off or exit safely if it fails?"] } },
+
+      { id: 44, title: "The Status Model", sub: "How to recognise a winner", cat: "understand_others", engine: "E1", mins: 2, mx: 77, my: 55,
+        keywords: ["status","luxury","brand","positioning","wealth","prestige","social","signaling"],
+        writeup: "Social and brand positioning operates along two subtle dimensions: how resources or reputation were gained (Earned vs. Inherited) and how they are expressed (Conspicuous Ego vs. Purposeful Contribution). Mapping brands, leaders, or market offerings across these four quadrants clarifies authentic respect versus fleeting showmanship.",
+        howTo: "Position brands, archetypes, or positioning options across Earned/Inherited and Ego/Purpose.",
+        quote: "Enduring respect clusters where earned craft meets genuine contribution.",
+        seeAlso: [20, 32],
+        cfg: { quads: ["Earned · Showy", "Inherited · Showy", "Earned · Purposeful", "Inherited · Stewardship"],
+          qSub: ["Loud status display", "Coasting on legacy", "Sustainable craft", "Quiet patronage"],
+          sample: [{t:"Hype-driven luxury drop",q:0},{t:"Legacy name without innovation",q:1},{t:"Durable mission-led product",q:2},{t:"Endowed civic foundation",q:3}] } },
+
+      { id: 45, title: "The Prisoner's Dilemma", sub: "When is it worth trusting someone?", cat: "understand_others", engine: "E2", mins: 2, mx: 57, my: 62,
+        keywords: ["trust","betray","cooperate","game theory","negotiation","partner","competitor","tit for tat"],
+        writeup: "Game theory's most famous puzzle shows why rational people sometimes trap themselves in mutual loss out of fear of betrayal. Political scientist Robert Axelrod ran 200-round tournaments and proved that in repeated relationships, the winning strategy is 'Tit-for-Tat': start by cooperating in good faith, mirror your counterpart's previous move clearly, and return to cooperation as soon as they do.",
+        howTo: "Weigh the long-term value of opening with trust against the concrete risks of one-shot defection.",
+        quote: "You cannot shake hands with a clenched fist—start open, then mirror clearly.",
+        seeAlso: [12],
+        cfg: { leftLabel: "Reasons to Cooperate First", rightLabel: "Defection Risks to Mitigate",
+          sampleLeft: [{t:"Ongoing multi-year partnership",w:5},{t:"Mutual trust unlocks shared upside",w:4}],
+          sampleRight: [{t:"Unwritten scope could invite misunderstanding",w:2}] } },
+
+      // PART IV: IMPROVE OTHERS (46-52)
+      { id: 46, title: "Drexler–Sibbet Team Performance", sub: "How to turn a group into a team", cat: "improve_others", engine: "E4", mins: 3, mx: 24, my: 49,
+        keywords: ["team","group","stages","onboarding","alignment","trust","dysfunction","teamwork","kickoff"],
+        writeup: "Alan Drexler and David Sibbet mapped the seven natural stages every group passes through on the way to real synergy: Orientation, Trust Building, Goal Clarification, Commitment, Implementation, High Performance, and Renewal. Skipping early alignment on purpose or trust always forces the team back later. Use it as a compass to spot what needs resolving right now.",
+        howTo: "Select the stage that matches your team's current conversations and friction points.",
+        quote: "A team model is a compass, not a pacemaker—clear each stage honestly.",
+        seeAlso: [47, 50],
+        cfg: { mode: "single_stage", items: ["1. Orientation — Clarifying 'Why am I here?' and purpose", "2. Trust Building — Establishing candor and mutual reliability", "3. Goal Clarification — Aligning on 'What are we doing?'", "4. Commitment — Locking roles, resources, and 'How we'll do it'", "5. Implementation — Disciplined execution on who does what, when", "6. High Performance — Fluid synergy and high-trust speed", "7. Renewal — Celebrating wins and asking 'Why continue?'"] } },
+
+      { id: 47, title: "The Team Model", sub: "Is your team up to the job?", cat: "improve_others", engine: "E3", mins: 3, mx: 15, my: 61,
+        keywords: ["hiring","skills","capability","team gap","strengths","roster","competence","evaluate team"],
+        writeup: "Strong teams succeed through complementary differences rather than identical clones. This model defines the core hard and soft skills your initiative requires, sets a minimum 'critical boundary' (e.g., 6 out of 10), and evaluates whether your collective roster clears every bar—and whether self-assessments match reality.",
+        howTo: "Score your team's current strength across three mission-critical capabilities to spot any gap below 6/10.",
+        quote: "Real team strength comes from complementary differences, not uniformity.",
+        seeAlso: [46, 50],
+        cfg: { subtype: "teamskills" } },
+
+      { id: 48, title: "The Gap-in-the-Market Model", sub: "How to recognise a bankable idea", cat: "improve_others", engine: "E3", mins: 3, mx: 39, my: 46,
+        keywords: ["market gap","startup idea","niche","competitors","pricing","positioning","launch","bankable"],
+        writeup: "Entering a crowded market works only if you bring a genuine category killer—or uncover an overlooked niche across Cost-Effectiveness, Prestige/Quality, and Market Awareness. Plotting your concept across these three dimensions clarifies how distinctly you stand apart, with one vital caveat: if a space is 100% empty, verify real customer demand exists.",
+        howTo: "Score your concept across Affordability, Quality/Prestige, and Distinctiveness to test niche strength.",
+        quote: "Look for an uncrowded gap—then verify customers actually want to stand there.",
+        seeAlso: [2, 3, 39],
+        cfg: { subtype: "marketgap" } },
+
+      { id: 49, title: "Hersey–Blanchard Leadership", sub: "How to successfully manage your employees", cat: "improve_others", engine: "E4", mins: 2, mx: 32, my: 53,
+        writeup: "Paul Hersey and Ken Blanchard showed there is no single 'best' management style—great leaders adapt to the person's current task expertise and morale. Newcomers need clear S1 Instructing; learners hitting early frustration need S2 Coaching; capable contributors with wavering confidence need S3 Supporting; seasoned owners thrive under S4 Delegating.",
+        howTo: "Pick the combination of skill and morale that describes your teammate on this specific task.",
+        keywords: ["manage","leadership","delegate","coach","micromanage","employee","junior","senior","situational"],
+        quote: "Lead people so thoughtfully that you gradually make your own oversight unnecessary.",
+        seeAlso: [46, 47],
+        cfg: { mode: "single_stage", items: ["S1 Instructing — New to the task, high enthusiasm: give clear step-by-step direction", "S2 Coaching — Growing skill, dipped confidence: ask guiding questions & support", "S3 Supporting — High skill, variable motivation: listen & encourage ownership", "S4 Delegating — High skill & high commitment: hand over full autonomy"] } },
+
+      { id: 50, title: "Role-Playing (6 Hats & Belbin)", sub: "How to change your own point of view", cat: "improve_others", engine: "E5", mins: 3, mx: 38, my: 72,
+        keywords: ["six thinking hats","de bono","belbin","perspective","brainstorm","meeting","roles","bias"],
+        writeup: "Meetings bog down when optimists, critics, and analysts argue from fixed egos simultaneously. Edward de Bono's Six Thinking Hats invites everyone—or a solo thinker—to wear one deliberate lens at a time: White (facts), Red (gut emotion), Black (risks), Yellow (upside), Green (creative alternatives), and Blue (structured synthesis), complemented by Meredith Belbin's diverse team roles.",
+        howTo: "Step through each of the six hats in order and jot down one crisp observation per perspective.",
+        quote: "Switching hats turns clash of egos into parallel exploration of every angle.",
+        seeAlso: [36, 46],
+        cfg: { subtype: "sixhats" } },
+
+      { id: 51, title: "Result Optimisation Model", sub: "Why the printer breaks down before a deadline", cat: "improve_others", engine: "E6", mins: 2, mx: 25, my: 67,
+        keywords: ["deadline","late","project management","sprint","iteration","ship","polish","timebox","printer"],
+        writeup: "Traditional project plans spend 90% of available time gathering and debating, leaving implementation to a frantic final sprint where one unexpected glitch derails everything. The Result Optimisation Model splits your available time into three equal loops—Draft Plan, Refinement, and Optimisation—forcing you to 'finish' a complete version three times with rising quality.",
+        howTo: "Set your total hours or days until the deadline to generate three equal end-to-end iteration loops.",
+        quote: "Plan every important project so that you finish it three times before the deadline.",
+        seeAlso: [1, 31],
+        cfg: { subtype: "threeloop" } },
+
+      { id: 52, title: "World's Next Top Model & My Models", sub: "What can we learn + Build your own model", cat: "improve_others", engine: "E8", mins: 3, mx: 45, my: 76,
+        keywords: ["custom","draw","create model","own framework","meta","systems thinking","workbook"],
+        writeup: "The closing chapter of The Decision Book reminds us that every matrix or model simplifies reality to help us focus—and invites you ('Now It's Your Turn') to sketch your own frameworks. Whenever a personal or team decision calls for custom axes, you can name your own 2×2 quadrants right here and reuse them across future decisions.",
+        howTo: "Give your custom framework a title and edit any quadrant label to craft your own reusable model.",
+        quote: "Models do not dictate what to think—they are the visible trace of active thinking.",
+        seeAlso: [18, 40],
+        cfg: { subtype: "customstudio" } }
+    ];
+
+    // =========================================================================
+    // CLEAN REACTIVE STATE
+    // =========================================================================
+    const state = {
+      studioView: "app",
+      layout: "mobile",     // 'mobile' | 'split'
+      tab: "decide",        // 'decide' | 'library' | 'journal'
+      problem: "I have a stable senior product role, but an early-stage startup in Berlin offered me Head of Product with equity. Torn between staying or leaping.",
+      scope: "all",
+      showScopeMenu: false,
+      showExamples: false,
+      showAlts: false,
+      libSearch: "",
+      libCat: "all",
+      libView: "list",      // 'list' | 'compass'
+      showLibFilter: false,
+      onlySaved: false,
+      onlyQuick: false,
+      favorites: new Set([1, 6, 14, 40, 50]),
+      activeId: null,
+      infoModelId: null,    // Opens compact '?' popover for any technique (never full screen!)
+      showMoreMenu: false,
+      showSettings: false,
+      settingsAcc: "account", // one accordion open at a time -> uncluttered!
+      showExport: false,
+      user: { isGuest: true, name: "Guest", email: "" },
+      reminders: { enabled: true, am: "08:30", pm: "20:30" },
+      bugs: [{ desc: "Option to export single decision as PDF", ctx: "Journal · v1.0.0" }],
+      journal: [
+        {
+          id: "seed-1",
+          modelId: 6,
+          title: "Berlin Head of Product Offer vs. Current Role",
+          date: "Saved today",
+          verdict: "Pulling forces (+9) outweigh Holding (+7) — strong case to explore the leap after verifying runway.",
+          reviewed: false
+        }
+      ],
+      work: {}
+    };
+
+    function getWork(m) {
+      if (!state.work[m.id]) {
+        const c = m.cfg || {};
+        state.work[m.id] = {
+          title: state.problem ? state.problem.slice(0, 68) : m.title,
+          quadItems: (c.sample || []).map(x => ({...x})),
+          targetQuad: 0,
+          leftItems: (c.sampleLeft || [{t:"Current stability & predictability",w:3}]).map(x=>({...x})),
+          rightItems: (c.sampleRight || [{t:"Higher growth & ownership",w:4}]).map(x=>({...x})),
+          s1: 7, s2: 7, s3: 5,
+          pastPct: 20, futPct: 30,
+          checks: (c.items || []).map((_, i) => i < 3),
+          stageIdx: 2,
+          morphSel: (c.rows || []).map(r => r.sel || 0),
+          scamperIdx: 0,
+          hatIdx: 0,
+          hats: {
+            0: "18 months runway; 4 paying enterprise design partners.",
+            1: "Energized and curious, with natural relocation nerves.",
+            2: "Moving costs and early-stage product-market risk.",
+            3: "Chance to shape the product & team culture from day one.",
+            4: "Propose a 3-week remote sprint together before relocating.",
+            5: "Meet the founders on-site this weekend, then commit by Friday."
+          },
+          puzzleSolved: false,
+          brokenRule: "Assuming relocation must happen on Day 1 rather than starting hybrid.",
+          giftRel: "partner", giftYears: 5, giftMilestone: true,
+          knowPct: 35, impactPct: 85,
+          roads: [
+            { name: "1. The Beckoning Road", hint: "What you have wanted to try", score: 8 },
+            { name: "2. Wildest Dream Road", hint: "If zero fear existed", score: 9 },
+            { name: "3. The Sensible Road", hint: "What cautious peers advise", score: 6 },
+            { name: "4. Road Not Travelled", hint: "Unexplored middle option", score: 7 },
+            { name: "5. The Familiar Road", hint: "Staying on current track", score: 5 },
+            { name: "6. The Safe Road Back", hint: "Returning to comfort zone", score: 3 }
+          ],
+          memoText: "Schedule important, non-urgent work every morning before opening inbox.",
+          hoursTotal: 12,
+          dlDouble: "Replace 'say yes to every request' with 'protect the vital 20% outcome'",
+          netItems: (c.sample || []).map(x => typeof x === "string" ? x : ({...x})),
+          chainSteps: Array.isArray(c.sample) && typeof c.sample[0] === "string" ? [...c.sample] : ["You", "Trusted Colleague", "Mutual Advisor", "Target Person"],
+          swanAssumption: "Assuming a single acquisition channel will stay predictable all year",
+          swanBuffer: "Offline-capable product + diversified organic referrals",
+          mcMin: 45, mcLikely: 80, mcMax: 140, mcResult: null,
+          customTitle: "Energy vs. Reversibility Matrix",
+          customQ: ["Reversible & Energizing", "Irreversible & Energizing", "Reversible & Draining", "Irreversible & Draining"]
+        };
+      }
+      return state.work[m.id];
+    }
+
+    // =========================================================================
+    // SMART RECOMMENDER (MODE 1)
+    // =========================================================================
+    function getRecommendations(text, scope) {
+      const q = (text || "").toLowerCase().trim();
+      if (!q) {
+        return [MODELS[5], MODELS[0], MODELS[13]].map(m => ({
+          model: m,
+          fit: `Ideal starting lens when ${m.sub.toLowerCase()}.`
+        }));
+      }
+      const scored = MODELS.map(m => {
+        let s = 0;
+        if (q.includes(m.title.toLowerCase().replace("the ",""))) s += 30;
+        m.keywords.forEach(k => { if (q.includes(k)) s += 8; });
+        if (/(two|offer|versus|vs\b|stay or|quit|move|berlin|torn|dilemma|either)/.test(q) && [6,24,13,2].includes(m.id)) s += 15;
+        if (/(urgent|busy|overwhelm|tasks|todo|time|focus|priorit)/.test(q) && [1,38,51,4].includes(m.id)) s += 16;
+        if (/(job|career|unhappy|resign|role|promotion)/.test(q) && [24,6,13,14].includes(m.id)) s += 14;
+        if (/(team|employee|manage|delegate|group|hire|morale)/.test(q) && [46,49,47,50,36].includes(m.id)) s += 15;
+        if (/(conflict|argue|fight|angry|disagree|negotiate|trust)/.test(q) && [12,45,36,7].includes(m.id)) s += 15;
+        if (/(idea|creative|brainstorm|launch|startup|product|market|niche)/.test(q) && [48,9,33,42,2].includes(m.id)) s += 14;
+        if (/(mistake|bug|error|fail|repeat|incident)/.test(q) && [31,35,51].includes(m.id)) s += 16;
+        if (/(risk|uncertain|forecast|budget|estimate|odds)/.test(q) && [40,41,11].includes(m.id)) s += 15;
+        if (/(gift|present|spend|anniversary|wedding)/.test(q) && m.id === 10) s += 35;
+
+        if (scope === "personal" && !m.cat.includes("self")) s -= 9;
+        if (scope === "team" && !m.cat.includes("others")) s -= 9;
+        if (scope === "quick" && m.mins > 2) s -= 7;
+        return { m, s };
+      }).sort((a, b) => b.s - a.s);
+
+      return scored.slice(0, 3).map((x, idx) => ({
+        model: x.m,
+        fit: idx === 0
+          ? `Directly addresses your situation by structuring ${x.m.sub.toLowerCase()} in about ${x.m.mins} minutes.`
+          : `Complementary perspective focused on ${x.m.sub.toLowerCase()}.`
+      }));
+    }
+
+    // =========================================================================
+    // TOP-LEVEL STUDIO VIEW SWITCHING
+    // =========================================================================
+    function setStudioView(v) {
+      state.studioView = v;
+      ["app","screens","guide"].forEach(k => {
+        document.getElementById(`view-${k}`).classList.toggle("hidden", k !== v);
+        const btn = document.getElementById(`sv-${k}`);
+        btn.className = k === v
+          ? "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[var(--card)] text-[var(--foreground)] shadow-sm transition"
+          : "px-3.5 py-1.5 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition";
+      });
+      document.getElementById("viewport-toggle").classList.toggle("hidden", v !== "app");
+      if (v === "app") renderApp();
+      if (v === "screens") renderScreenOverview();
+      if (v === "guide") renderGuideCatalog();
+    }
+
+    function setLayout(mode) {
+      state.layout = mode;
+      const f = document.getElementById("device-frame");
+      f.className = mode === "split"
+        ? "split-frame bg-[var(--card)] border border-[var(--border)] overflow-hidden flex flex-col relative transition-all"
+        : "mobile-frame bg-[var(--card)] border border-[var(--border)] overflow-hidden flex flex-col relative transition-all";
+      if (mode === "split" && !state.activeId) state.activeId = 6;
+      renderApp();
+    }
+
+    function openTechnique(id, fromProblem = false) {
+      setStudioView("app");
+      const m = MODELS.find(x => x.id === id);
+      const w = getWork(m);
+      if (fromProblem && state.problem.trim()) {
+        w.title = state.problem.trim().slice(0, 70);
+      }
+      state.activeId = id;
+      state.showMoreMenu = false;
+      state.showSettings = false;
+      renderApp();
+    }
+
+    // =========================================================================
+    // MAIN APP RENDERER (UNCLUTTERED EDITORIAL DESIGN)
+    // =========================================================================
+    function renderApp() {
+      ["mobile","split"].forEach(m => {
+        const b = document.getElementById(`ly-${m}`);
+        if (b) b.className = state.layout === m
+          ? "px-3 py-1 rounded-lg text-xs font-semibold bg-[var(--card)] text-[var(--foreground)] shadow-sm transition"
+          : "px-3 py-1 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition";
+      });
+
+      const root = document.getElementById("app-root");
+      if (state.layout === "split") {
+        const activeM = MODELS.find(x => x.id === (state.activeId || 6));
+        root.innerHTML = `
+          <div class="flex-1 flex overflow-hidden">
+            <div class="w-[360px] border-r border-[var(--border)] flex flex-col overflow-hidden bg-[var(--background)] shrink-0">
+              ${renderCleanHeader()}
+              <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5 no-scrollbar">
+                ${renderTabBody()}
+              </div>
+              ${renderCleanBottomNav()}
+            </div>
+            <div class="flex-1 flex flex-col overflow-hidden bg-[var(--card)] relative">
+              ${renderWorkspace(activeM, true)}
+            </div>
+          </div>
+          ${state.showSettings ? renderSettingsDrawer() : ""}
+          ${state.infoModelId ? renderInfoPopover() : ""}
+          ${state.showExport ? renderExportModal() : ""}
+        `;
+      } else {
+        const activeM = state.activeId ? MODELS.find(x => x.id === state.activeId) : null;
+        if (activeM) {
+          root.innerHTML = `
+            <div class="flex-1 flex flex-col overflow-hidden bg-[var(--card)] relative">
+              ${renderWorkspace(activeM, false)}
+            </div>
+            ${state.showSettings ? renderSettingsDrawer() : ""}
+            ${state.infoModelId ? renderInfoPopover() : ""}
+            ${state.showExport ? renderExportModal() : ""}
+          `;
+        } else {
+          root.innerHTML = `
+            ${renderCleanHeader()}
+            <div class="flex-1 overflow-y-auto px-5 py-4 space-y-5 no-scrollbar">
+              ${renderTabBody()}
+            </div>
+            ${renderCleanBottomNav()}
+            ${state.showSettings ? renderSettingsDrawer() : ""}
+            ${state.infoModelId ? renderInfoPopover() : ""}
+            ${state.showExport ? renderExportModal() : ""}
+          `;
+        }
+      }
+
+      if ((state.activeId === 40 || (state.layout === "split" && (state.activeId || 6) === 40))) {
+        requestAnimationFrame(drawMonteCarlo);
+      }
+    }
+
+    function renderCleanHeader() {
+      const titles = {
+        decide: "Decide50",
+        library: "Techniques",
+        journal: "Journal"
+      };
+      return `
+        <header class="px-5 pt-4 pb-3 bg-[var(--background)] flex items-center justify-between shrink-0">
+          <h1 class="text-base font-semibold tracking-tight">${titles[state.tab]}</h1>
+          <div class="flex items-center gap-2">
+            ${state.tab === "journal" ? `<button onclick="state.showExport=true;renderApp()" class="px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition">Export</button>` : ""}
+            <button onclick="state.showSettings=true;renderApp()" title="Account, Reminders & Settings" class="w-8 h-8 rounded-full bg-[var(--secondary)] border border-[var(--border)] flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition">
+              ${ICONS.user}
+            </button>
+          </div>
+        </header>
+      `;
+    }
+
+    function renderCleanBottomNav() {
+      const items = [
+        { id: "decide", label: "Decide", icon: ICONS.spark },
+        { id: "library", label: "Techniques", icon: ICONS.book },
+        { id: "journal", label: "Journal", icon: ICONS.journal }
+      ];
+      return `
+        <nav class="bg-[var(--card)] border-t border-[var(--border)] px-4 py-2 grid grid-cols-3 gap-2 shrink-0">
+          ${items.map(it => {
+            const active = state.tab === it.id;
+            return `<button onclick="state.tab='${it.id}';if(state.layout==='mobile')state.activeId=null;renderApp()" class="py-1.5 rounded-xl flex flex-col items-center justify-center gap-1 transition ${active ? "text-[var(--foreground)] font-semibold" : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}">
+              <span class="${active ? "text-[var(--primary)]" : ""}">${it.icon}</span>
+              <span class="text-xs">${it.label}</span>
+            </button>`;
+          }).join("")}
+        </nav>
+      `;
+    }
+
+    function renderTabBody() {
+      if (state.tab === "decide") return renderDecideMode();
+      if (state.tab === "library") return renderLibraryMode();
+      return renderJournalMode();
+    }
+
+    // =========================================================================
+    // MODE 1: "TELL YOUR PROBLEM" — SPACIOUS, CALM, WITH WRITEUP ON CARD
+    // =========================================================================
+    const SAMPLE_DILEMMAS = [
+      "I have two strong job offers—stay with my current team or join an early startup.",
+      "I am overwhelmed by urgent daily tasks and neglecting strategic long-term work.",
+      "Two teammates disagree on direction and our discussions keep stalling.",
+      "We want to test whether our new product idea fills a real gap in the market."
+    ];
+
+    function renderDecideMode() {
+      const recs = getRecommendations(state.problem, state.scope);
+      const best = recs[0];
+      const alts = recs.slice(1);
+      const scopeLabels = { all: "Any context", personal: "Personal", team: "Team & Others", quick: "Quick (≤2m)" };
+
+      return `
+        <!-- Calm Editorial Prompt -->
+        <div class="space-y-3">
+          <div>
+            <h2 class="text-lg font-semibold tracking-tight leading-snug">What are you trying to decide?</h2>
+            <p class="text-xs text-[var(--muted-foreground)] mt-0.5">Describe your situation in plain words, and we will match the best model from the book.</p>
+          </div>
+
+          <!-- Clean Unified Input Box (Options tucked neatly inside footer) -->
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-3.5 shadow-sm space-y-3 relative">
+            <textarea rows="3" oninput="state.problem=this.value;refreshRecsInPlace()" placeholder="Write a dilemma, goal, or challenge..." class="w-full bg-transparent text-sm leading-relaxed focus:outline-none resize-none">${esc(state.problem)}</textarea>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border)]">
+              <div class="flex items-center gap-2">
+                <button onclick="state.showScopeMenu=!state.showScopeMenu;state.showExamples=false;renderApp()" class="px-2.5 py-1 rounded-lg bg-[var(--secondary)] text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1">
+                  <span>${scopeLabels[state.scope]}</span>
+                  ${ICONS.chevDown}
+                </button>
+                <button onclick="state.showExamples=!state.showExamples;state.showScopeMenu=false;renderApp()" class="px-2 py-1 rounded-lg text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+                  Examples
+                </button>
+              </div>
+              ${state.problem ? `<button onclick="state.problem='';renderApp()" class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Clear</button>` : ""}
+            </div>
+
+            <!-- Quiet Scope Popover -->
+            ${state.showScopeMenu ? `
+              <div class="p-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] grid grid-cols-2 gap-1">
+                ${Object.entries(scopeLabels).map(([k, lbl]) => `
+                  <button onclick="state.scope='${k}';state.showScopeMenu=false;renderApp()" class="px-2.5 py-1.5 rounded-lg text-xs text-left font-medium ${state.scope===k ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "hover:bg-[var(--secondary)]"}">${lbl}</button>
+                `).join("")}
+              </div>
+            ` : ""}
+
+            <!-- Quiet Sample Prompts Disclosure -->
+            ${state.showExamples ? `
+              <div class="pt-1 space-y-1 border-t border-[var(--border)]">
+                ${SAMPLE_DILEMMAS.map((s, idx) => `
+                  <button onclick="state.problem=SAMPLE_DILEMMAS[${idx}];state.showExamples=false;renderApp()" class="w-full text-left p-2 rounded-lg text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition leading-snug">
+                    "${s}"
+                  </button>
+                `).join("")}
+              </div>
+            ` : ""}
+          </div>
+        </div>
+
+        <!-- Recommendation Stack (Clean & Uncluttered) -->
+        <div id="recs-container" class="space-y-3">
+          ${renderRecStack(best, alts)}
+        </div>
+      `;
+    }
+
+    function refreshRecsInPlace() {
+      const el = document.getElementById("recs-container");
+      if (!el) return;
+      const recs = getRecommendations(state.problem, state.scope);
+      el.innerHTML = renderRecStack(recs[0], recs.slice(1));
+    }
+
+    function renderRecStack(best, alts) {
+      const m = best.model;
+      return `
+        <!-- Primary Best-Fit Card (Compact; details under '?' button) -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <span class="text-xs font-semibold uppercase tracking-wider text-[var(--primary)]">Recommended · ${m.mins} min</span>
+              <h3 class="text-base font-semibold tracking-tight mt-0.5">${m.title}</h3>
+              <p class="text-xs text-[var(--muted-foreground)] mt-0.5">${m.sub}</p>
+            </div>
+            <button onclick="state.infoModelId=${m.id};renderApp()" title="About this technique" class="w-7 h-7 rounded-full border border-[var(--border)] bg-[var(--secondary)] text-xs font-semibold flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--primary)] transition shrink-0">
+              ?
+            </button>
+          </div>
+
+          <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">
+            ${esc(best.fit)}
+          </p>
+
+          <button onclick="openTechnique(${m.id}, true)" class="w-full py-2.5 px-4 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:opacity-90 transition">
+            Use This Technique →
+          </button>
+        </div>
+
+        <!-- Secondary Alternatives Tucked Cleanly Behind Disclosure -->
+        <div class="border border-[var(--border)] rounded-2xl bg-[var(--card)] overflow-hidden">
+          <button onclick="state.showAlts=!state.showAlts;refreshRecsInPlace()" class="w-full px-4 py-3 flex items-center justify-between text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition">
+            <span>2 other techniques for this problem</span>
+            <span class="transition-transform ${state.showAlts ? 'rotate-180' : ''}">${ICONS.chevDown}</span>
+          </button>
+          ${state.showAlts ? `
+            <div class="px-4 pb-3 space-y-2.5 border-t border-[var(--border)] pt-3">
+              ${alts.map(a => `
+                <div class="flex items-center justify-between gap-2 pb-2.5 last:pb-0 border-b last:border-b-0 border-[var(--border)]">
+                  <div class="min-w-0 flex-1">
+                    <h4 class="text-xs font-semibold truncate">#${String(a.model.id).padStart(2,"0")} · ${a.model.title}</h4>
+                    <p class="text-xs text-[var(--muted-foreground)] truncate">${a.model.sub}</p>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="state.infoModelId=${a.model.id};renderApp()" title="About this technique" class="w-6 h-6 rounded-full border border-[var(--border)] bg-[var(--secondary)] text-xs font-semibold flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)]">?</button>
+                    <button onclick="openTechnique(${a.model.id}, true)" class="px-2.5 py-1 rounded-lg bg-[var(--secondary)] text-xs font-semibold hover:opacity-80">Open →</button>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // MODE 2: DIRECT 52-TECHNIQUE LIBRARY (CLEAN EDITORIAL LIST + COMPASS)
+    // =========================================================================
+    function renderLibraryMode() {
+      const q = state.libSearch.toLowerCase().trim();
+      const list = MODELS.filter(m => {
+        if (state.onlySaved && !state.favorites.has(m.id)) return false;
+        if (state.onlyQuick && m.mins > 2) return false;
+        if (CHAPTERS[state.libCat] && m.cat !== state.libCat) return false;
+        if (!q) return true;
+        return m.title.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q) || m.writeup.toLowerCase().includes(q) || m.keywords.some(k => k.includes(q)) || String(m.id) === q;
+      });
+
+      const hasActiveFilter = state.onlySaved || state.onlyQuick;
+
+      return `
+        <div class="space-y-3">
+          <!-- Single Clean Search + Quiet Filter & Compass Icons -->
+          <div class="flex items-center gap-2">
+            <div class="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]">
+              <span class="text-[var(--muted-foreground)]">${ICONS.search}</span>
+              <input type="text" value="${esc(state.libSearch)}" oninput="state.libSearch=this.value;renderApp()" placeholder="Search 52 techniques..." class="flex-1 bg-transparent text-xs focus:outline-none min-w-0" />
+              ${state.libSearch ? `<button onclick="state.libSearch='';renderApp()" class="text-xs text-[var(--muted-foreground)]">✕</button>` : ""}
+            </div>
+            <button onclick="state.showLibFilter=!state.showLibFilter;renderApp()" title="Filter options" class="p-2 rounded-xl border ${hasActiveFilter ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]" : "bg-[var(--card)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}">
+              ${ICONS.sliders}
+            </button>
+            <button onclick="state.libView=state.libView==='list'?'compass':'list';renderApp()" title="Toggle Book Meta-Compass" class="p-2 rounded-xl border ${state.libView==='compass' ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]" : "bg-[var(--card)] border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}">
+              ${ICONS.compass}
+            </button>
+          </div>
+
+          <!-- Collapsible Filter Popover (Present Without Clutter) -->
+          ${state.showLibFilter ? `
+            <div class="p-3 rounded-xl bg-[var(--card)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-2">
+                <button onclick="state.onlySaved=!state.onlySaved;renderApp()" class="px-2.5 py-1 rounded-lg border ${state.onlySaved ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]" : "bg-[var(--secondary)] border-[var(--border)]"}">Bookmarked (${state.favorites.size})</button>
+                <button onclick="state.onlyQuick=!state.onlyQuick;renderApp()" class="px-2.5 py-1 rounded-lg border ${state.onlyQuick ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]" : "bg-[var(--secondary)] border-[var(--border)]"}">Quick (≤2 min)</button>
+              </div>
+              ${hasActiveFilter ? `<button onclick="state.onlySaved=false;state.onlyQuick=false;renderApp()" class="text-[var(--muted-foreground)] underline">Reset</button>` : ""}
+            </div>
+          ` : ""}
+
+          <!-- Clean Underline Section Bar (Replaces Messy Pill Rows) -->
+          <div class="flex items-center gap-4 overflow-x-auto no-scrollbar border-b border-[var(--border)] text-xs">
+            ${[
+              ["all", "All (52)"],
+              ["improve_self", "Improve Self"],
+              ["understand_self", "Know Self"],
+              ["understand_others", "Know Others"],
+              ["improve_others", "Lead Others"]
+            ].map(([id, lbl]) => `
+              <button onclick="state.libCat='${id}';renderApp()" class="pb-2.5 whitespace-nowrap border-b-2 transition ${state.libCat===id ? "border-[var(--primary)] text-[var(--foreground)] font-semibold" : "border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)]"}">
+                ${lbl}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+
+        ${state.libView === "compass" ? renderCompassMap(list) : `
+          <!-- Clean Editorial Rows -->
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl divide-y divide-[var(--border)] overflow-hidden">
+            ${list.length === 0 ? `<p class="p-6 text-xs text-center text-[var(--muted-foreground)]">No techniques match your filter.</p>` : list.map(m => `
+              <div onclick="openTechnique(${m.id})" class="w-full px-4 py-3.5 text-left flex items-center justify-between gap-2.5 cursor-pointer hover:bg-[var(--secondary)]/50 transition ${state.activeId===m.id && state.layout==='split' ? 'bg-[var(--secondary)]/80' : ''}">
+                <div class="flex items-start gap-3 min-w-0 flex-1">
+                  <span class="text-xs font-mono text-[var(--muted-foreground)] pt-0.5 shrink-0">${String(m.id).padStart(2,"0")}</span>
+                  <div class="min-w-0 flex-1">
+                    <h3 class="text-xs font-semibold truncate">${m.title}</h3>
+                    <p class="text-xs text-[var(--muted-foreground)] truncate mt-0.5">${m.sub}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button onclick="event.stopPropagation();state.infoModelId=${m.id};renderApp()" title="About this technique" class="w-6 h-6 rounded-full border border-[var(--border)] text-xs font-semibold flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)] transition">?</button>
+                  <span class="text-[var(--muted-foreground)]">${ICONS.chevRight}</span>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `}
+      `;
+    }
+
+    function renderCompassMap(list) {
+      return `
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold">Book Meta-Compass (Page 82)</span>
+            <span class="text-xs text-[var(--muted-foreground)]">Tap any number</span>
+          </div>
+          <div class="relative w-full h-64 rounded-xl bg-[var(--secondary)]/60 border border-[var(--border)] overflow-hidden">
+            <div class="absolute inset-y-0 left-1/2 w-px bg-[var(--border)]"></div>
+            <div class="absolute inset-x-0 top-1/2 h-px bg-[var(--border)]"></div>
+            <span class="absolute top-2 left-1/2 -translate-x-1/2 text-xs font-medium text-[var(--muted-foreground)] bg-[var(--card)] px-2 rounded">Me</span>
+            <span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-medium text-[var(--muted-foreground)] bg-[var(--card)] px-2 rounded">Others</span>
+            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--muted-foreground)] bg-[var(--card)] px-2 rounded">Doing</span>
+            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-[var(--muted-foreground)] bg-[var(--card)] px-2 rounded">Thinking</span>
+
+            ${list.map(m => `
+              <button onclick="openTechnique(${m.id})" title="${m.title}" style="left:${m.mx}%;top:${m.my}%" class="absolute -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium flex items-center justify-center hover:scale-125 transition shadow-sm">
+                ${m.id}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // MODE 3: CLEAN DECISION JOURNAL
+    // =========================================================================
+    function renderJournalMode() {
+      if (state.journal.length === 0) {
+        return `
+          <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-8 text-center space-y-2">
+            <p class="text-sm font-semibold">No saved decisions yet</p>
+            <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">Completed workspaces you save will appear here for calm reflection and spaced review.</p>
+          </div>
+        `;
+      }
+      return `
+        <div class="space-y-3">
+          ${state.journal.map((d, idx) => {
+            const m = MODELS.find(x => x.id === d.modelId) || MODELS[0];
+            return `
+              <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 space-y-2.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <span class="text-xs text-[var(--muted-foreground)]">${m.title} · ${d.date}</span>
+                    <h3 class="text-sm font-semibold mt-0.5 leading-snug">${esc(d.title)}</h3>
+                  </div>
+                  <button onclick="state.journal.splice(${idx},1);renderApp()" class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] px-1">✕</button>
+                </div>
+                <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">${esc(d.verdict)}</p>
+                <div class="flex items-center justify-between pt-2 border-t border-[var(--border)] text-xs">
+                  ${d.reviewed
+                    ? `<span class="text-[var(--muted-foreground)]">Outcome reviewed</span>`
+                    : `<button onclick="state.journal[${idx}].reviewed=true;renderApp()" class="font-medium text-[var(--primary)] hover:underline">Mark review check-in</button>`
+                  }
+                  <button onclick="openTechnique(${m.id})" class="font-semibold hover:underline">Open →</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // TECHNIQUE WORKSPACE — CLEAR WRITEUP + UNCLUTTERED INTERACTIVE TOOL
+    // =========================================================================
+    function renderWorkspace(m, isSplit) {
+      const w = getWork(m);
+      const takeaway = buildTakeaway(m, w);
+      const isFav = state.favorites.has(m.id);
+
+      return `
+        <!-- Minimal Workspace Top Bar -->
+        <div class="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between gap-2 shrink-0 bg-[var(--card)] relative">
+          <div class="flex items-center gap-2 min-w-0">
+            ${!isSplit ? `<button onclick="state.activeId=null;renderApp()" class="p-1.5 -ml-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]">${ICONS.back}</button>` : ""}
+            <span class="text-xs text-[var(--muted-foreground)] truncate">#${String(m.id).padStart(2,"0")} · ${CHAPTERS[m.cat].label}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="state.infoModelId=${m.id};renderApp()" title="About this technique" class="w-7 h-7 rounded-full border border-[var(--border)] bg-[var(--secondary)] text-xs font-semibold flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--primary)] transition">
+              ?
+            </button>
+            <button onclick="toggleBookmark(${m.id})" title="Bookmark technique" class="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]">
+              ${ICONS.bookmark(isFav)}
+            </button>
+            <!-- All secondary options neatly inside 'More' menu -->
+            <button onclick="state.showMoreMenu=!state.showMoreMenu;renderApp()" title="More options" class="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--secondary)]">
+              ${ICONS.dots}
+            </button>
+            <button onclick="saveToJournal(${m.id})" class="ml-1 px-3 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-semibold hover:opacity-90 transition">
+              Save
+            </button>
+          </div>
+
+          <!-- Clean Overflow Menu (Present Without Cluttering Screen) -->
+          ${state.showMoreMenu ? `
+            <div class="absolute right-5 top-12 z-30 w-52 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-lg py-1 text-xs">
+              <button onclick="resetSample(${m.id}, true)" class="w-full px-3.5 py-2 text-left hover:bg-[var(--secondary)]">Load sample example</button>
+              <button onclick="resetSample(${m.id}, false)" class="w-full px-3.5 py-2 text-left hover:bg-[var(--secondary)]">Clear workspace inputs</button>
+              <button onclick="state.showMoreMenu=false;state.infoModelId=${m.id};renderApp()" class="w-full px-3.5 py-2 text-left hover:bg-[var(--secondary)]">About this technique (?)</button>
+              <button onclick="state.showMoreMenu=false;state.showExport=true;renderApp()" class="w-full px-3.5 py-2 text-left hover:bg-[var(--secondary)]">Export as Markdown</button>
+            </div>
+          ` : ""}
+        </div>
+
+        <!-- Calm Scrollable Workspace Body (Zero Inline Explanation Clutter) -->
+        <div class="flex-1 overflow-y-auto px-5 py-5 space-y-5 no-scrollbar" onclick="if(state.showMoreMenu){state.showMoreMenu=false;renderApp();}">
+
+          <!-- 1. Clean Technique Heading -->
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold tracking-tight leading-snug">${m.title}</h2>
+              <p class="text-xs text-[var(--muted-foreground)] mt-0.5">${m.sub} · ${m.mins} min</p>
+            </div>
+          </div>
+
+          <!-- 2. Subtle Editable Decision Topic -->
+          <div class="border-b border-[var(--border)] pb-2">
+            <label class="block text-xs text-[var(--muted-foreground)] mb-1">Your decision or topic</label>
+            <input type="text" value="${esc(w.title)}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).title=this.value" placeholder="Enter your decision topic..." class="w-full bg-transparent text-sm font-medium focus:outline-none" />
+          </div>
+
+          <!-- 3. Clean Interactive Tool -->
+          <div class="space-y-4">
+            ${renderCleanEngine(m, w)}
+          </div>
+
+          <!-- 4. Calm Plain-English Takeaway -->
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] border-l-4 border-l-[var(--primary)] space-y-1">
+            <span class="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Takeaway</span>
+            <p class="text-xs leading-relaxed pt-0.5">${esc(takeaway)}</p>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function toggleBookmark(id) {
+      if (state.favorites.has(id)) state.favorites.delete(id);
+      else state.favorites.add(id);
+      renderApp();
+    }
+
+    function resetSample(id, loadExample) {
+      delete state.work[id];
+      const m = MODELS.find(x => x.id === id);
+      const w = getWork(m);
+      if (!loadExample) {
+        w.quadItems = [];
+        w.leftItems = [];
+        w.rightItems = [];
+        w.checks = w.checks.map(() => false);
+      }
+      state.showMoreMenu = false;
+      renderApp();
+    }
+
+    function saveToJournal(id) {
+      const m = MODELS.find(x => x.id === id);
+      const w = getWork(m);
+      state.journal.unshift({
+        id: "j-" + Date.now(),
+        modelId: m.id,
+        title: w.title || m.title,
+        date: "Just now",
+        verdict: buildTakeaway(m, w),
+        reviewed: false
+      });
+      state.tab = "journal";
+      if (state.layout === "mobile") state.activeId = null;
+      renderApp();
+    }
+
+    // =========================================================================
+    // CLEAN, UNCLUTTERED INTERACTIVE ENGINES (E1–E8)
+    // =========================================================================
+    function renderCleanEngine(m, w) {
+      if (m.engine === "E1") return renderCleanE1(m, w);
+      if (m.engine === "E2") return renderCleanE2(m, w);
+      if (m.engine === "E3") return renderCleanE3(m, w);
+      if (m.engine === "E4") return renderCleanE4(m, w);
+      if (m.engine === "E5") return renderCleanE5(m, w);
+      if (m.engine === "E6") return renderCleanE6(m, w);
+      if (m.engine === "E7") return renderCleanE7(m, w);
+      return renderCleanE8(m, w);
+    }
+
+    // E1: Clean 2x2 Spatial Board + Minimal Add Row
+    function renderCleanE1(m, w) {
+      const quads = m.cfg.quads;
+      const qSub = m.cfg.qSub || ["","","",""];
+      return `
+        <!-- Minimal Single-Row Add Control -->
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="clean-e1-inp" type="text" onkeydown="if(event.key==='Enter')addCleanE1(${m.id})" placeholder="Add item..." class="flex-1 px-3 py-2 rounded-xl text-xs bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]" />
+          <div class="flex gap-1.5">
+            <select onchange="getWork(MODELS.find(x=>x.id===${m.id})).targetQuad=+this.value" class="px-2.5 py-2 rounded-xl text-xs bg-[var(--background)] border border-[var(--border)]">
+              ${quads.map((q, idx) => `<option value="${idx}" ${w.targetQuad===idx?"selected":""}>${q}</option>`).join("")}
+            </select>
+            <button onclick="addCleanE1(${m.id})" class="px-3.5 py-2 rounded-xl bg-[var(--secondary)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)] text-xs font-semibold transition">Add</button>
+          </div>
+        </div>
+
+        <!-- Clean 2x2 Grid (No Duplicate List Clutter!) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${quads.map((qTitle, qi) => {
+            const qItems = w.quadItems.map((it, realIdx) => ({...it, realIdx})).filter(it => it.q === qi);
+            return `
+              <div class="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-2.5 min-h-[120px]">
+                <div class="flex items-baseline justify-between gap-2 border-b border-[var(--border)] pb-2">
+                  <div>
+                    <h4 class="text-xs font-semibold">${qTitle}</h4>
+                    <p class="text-xs text-[var(--muted-foreground)]">${qSub[qi]}</p>
+                  </div>
+                  <span class="text-xs text-[var(--muted-foreground)]">${qItems.length}</span>
+                </div>
+                <div class="space-y-1.5">
+                  ${qItems.length === 0 ? `<p class="text-xs text-[var(--muted-foreground)]/60 py-1">No items</p>` : qItems.map(it => `
+                    <div class="group flex items-start justify-between gap-2 text-xs py-1">
+                      <span class="leading-snug">${esc(it.t)}</span>
+                      <div class="flex items-center gap-1 shrink-0 text-[var(--muted-foreground)]">
+                        <button onclick="getWork(MODELS.find(x=>x.id===${m.id})).quadItems[${it.realIdx}].q=(${it.q}+1)%4;renderApp()" title="Move to next quadrant" class="hover:text-[var(--foreground)] px-1">⇄</button>
+                        <button onclick="getWork(MODELS.find(x=>x.id===${m.id})).quadItems.splice(${it.realIdx},1);renderApp()" title="Remove" class="hover:text-[var(--foreground)] px-1">✕</button>
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+    function addCleanE1(mid) {
+      const inp = document.getElementById("clean-e1-inp");
+      const val = (inp?.value || "").trim();
+      if (!val) return;
+      const w = getWork(MODELS.find(x => x.id === mid));
+      w.quadItems.push({ t: val, q: w.targetQuad || 0 });
+      renderApp();
+    }
+
+    // E2: Clean Tug-of-War Balance with Quiet 5-Dot Weights
+    function renderCleanE2(m, w) {
+      const lSum = w.leftItems.reduce((s, x) => s + x.w, 0);
+      const rSum = w.rightItems.reduce((s, x) => s + x.w, 0);
+      const rPct = Math.round((rSum / Math.max(lSum + rSum, 1)) * 100);
+
+      return `
+        <!-- Subtle Balance Bar -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs font-medium">
+            <span>${m.cfg.leftLabel} (${lSum})</span>
+            <span>${m.cfg.rightLabel} (${rSum})</span>
+          </div>
+          <div class="h-2 rounded-full bg-[var(--secondary)] overflow-hidden flex">
+            <div style="width:${100 - rPct}%" class="bg-[var(--muted-foreground)]/40 transition-all"></div>
+            <div style="width:${rPct}%" class="bg-[var(--primary)] transition-all"></div>
+          </div>
+        </div>
+
+        <!-- Single Clean Input -->
+        <div class="flex gap-1.5">
+          <input id="clean-e2-inp" type="text" placeholder="Add factor..." class="flex-1 px-3 py-2 rounded-xl text-xs bg-[var(--background)] border border-[var(--border)] focus:outline-none" />
+          <button onclick="addCleanE2(${m.id},'left')" class="px-2.5 py-2 rounded-xl bg-[var(--secondary)] text-xs font-medium shrink-0">+ Left</button>
+          <button onclick="addCleanE2(${m.id},'right')" class="px-2.5 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium shrink-0">+ Right</button>
+        </div>
+
+        <!-- Two Clean Columns -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${[["left", m.cfg.leftLabel, w.leftItems], ["right", m.cfg.rightLabel, w.rightItems]].map(([side, label, arr]) => `
+            <div class="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-2.5">
+              <h4 class="text-xs font-semibold border-b border-[var(--border)] pb-2">${label}</h4>
+              ${arr.length === 0 ? `<p class="text-xs text-[var(--muted-foreground)]/60">None added</p>` : arr.map((it, idx) => `
+                <div class="flex items-center justify-between gap-2 text-xs py-1">
+                  <span class="leading-snug flex-1">${esc(it.t)}</span>
+                  <button onclick="const a=getWork(MODELS.find(x=>x.id===${m.id})).${side}Items;a[${idx}].w=(a[${idx}].w%5)+1;renderApp()" title="Tap to adjust weight (1–5)" class="font-mono tracking-tighter text-[var(--primary)] shrink-0">
+                    ${"●".repeat(it.w)}${"○".repeat(5 - it.w)}
+                  </button>
+                  <button onclick="getWork(MODELS.find(x=>x.id===${m.id})).${side}Items.splice(${idx},1);renderApp()" class="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">✕</button>
+                </div>
+              `).join("")}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+    function addCleanE2(mid, side) {
+      const inp = document.getElementById("clean-e2-inp");
+      const val = (inp?.value || "").trim();
+      if (!val) return;
+      const w = getWork(MODELS.find(x => x.id === mid));
+      (side === "left" ? w.leftItems : w.rightItems).push({ t: val, w: 3 });
+      renderApp();
+    }
+
+    // E3: Clean Architectural Charts & Sliders
+    function renderCleanE3(m, w) {
+      const sub = m.cfg.subtype;
+      if (sub === "flow") {
+        const px = 30 + (w.s2 / 10) * 185;
+        const py = 148 - (w.s1 / 10) * 125;
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-4">
+            <svg viewBox="0 0 240 170" class="w-full h-40">
+              <polygon points="30,148 180,20 220,20 70,148" fill="var(--primary)" fill-opacity="0.14" />
+              <line x1="30" y1="148" x2="220" y2="148" stroke="currentColor" stroke-opacity="0.25" />
+              <line x1="30" y1="148" x2="30" y2="20" stroke="currentColor" stroke-opacity="0.25" />
+              <text x="38" y="36" font-size="12" fill="currentColor" opacity="0.55">Burnout</text>
+              <text x="148" y="62" font-size="12" font-weight="600" fill="currentColor">Flow Zone</text>
+              <text x="155" y="138" font-size="12" fill="currentColor" opacity="0.55">Boreout</text>
+              <circle cx="${px}" cy="${py}" r="6" fill="var(--primary)" />
+            </svg>
+            <div class="space-y-3 text-xs">
+              <div>
+                <div class="flex justify-between mb-1"><span class="font-medium">Challenge Level</span><span class="text-[var(--muted-foreground)]">${w.s1} / 10</span></div>
+                <input type="range" min="1" max="10" value="${w.s1}" oninput="getWork(MODELS.find(x=>x.id===14)).s1=+this.value;renderApp()" class="w-full" />
+              </div>
+              <div>
+                <div class="flex justify-between mb-1"><span class="font-medium">Skill & Readiness</span><span class="text-[var(--muted-foreground)]">${w.s2} / 10</span></div>
+                <input type="range" min="1" max="10" value="${w.s2}" oninput="getWork(MODELS.find(x=>x.id===14)).s2=+this.value;renderApp()" class="w-full" />
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      if (sub === "energy") {
+        const now = Math.max(0, 100 - w.pastPct - w.futPct);
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-4 text-xs">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)]"><span class="text-[var(--muted-foreground)] block">Past</span><strong class="text-sm">${w.pastPct}%</strong></div>
+              <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--primary)]"><span class="text-[var(--muted-foreground)] block">Present</span><strong class="text-sm">${now}%</strong></div>
+              <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)]"><span class="text-[var(--muted-foreground)] block">Future</span><strong class="text-sm">${w.futPct}%</strong></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span>Past Reflection</span><span>${w.pastPct}%</span></div>
+              <input type="range" min="0" max="80" value="${w.pastPct}" oninput="const wk=getWork(MODELS.find(x=>x.id===21));wk.pastPct=+this.value;if(wk.pastPct+wk.futPct>100)wk.futPct=100-wk.pastPct;renderApp()" class="w-full" />
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span>Future Planning / Worry</span><span>${w.futPct}%</span></div>
+              <input type="range" min="0" max="80" value="${w.futPct}" oninput="const wk=getWork(MODELS.find(x=>x.id===21));wk.futPct=+this.value;if(wk.pastPct+wk.futPct>100)wk.pastPct=100-wk.futPct;renderApp()" class="w-full" />
+            </div>
+          </div>
+        `;
+      }
+      const labels = sub === "sail" ? ["Have To (Obligation)", "Able To (Capability)", "Want To (Desire)"]
+        : sub === "elbaek" ? ["Global (vs. Local)", "Team (vs. Individual)", "Brain (vs. Body)"]
+        : sub === "potential" ? ["My Expectations", "Others' Expectations", "Actual Results"]
+        : sub === "teamskills" ? ["Domain Craft", "Execution Reliability", "Composure Under Stress"]
+        : ["Cost-Effectiveness", "Prestige & Quality", "Market Awareness"];
+
+      const p1y = 95 - w.s1 * 6.8;
+      const p2x = 120 + w.s2 * 7.5, p2y = 100 + w.s2 * 4;
+      const p3x = 120 - w.s3 * 7.5, p3y = 100 + w.s3 * 4;
+
+      return `
+        <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-4 text-xs">
+          <svg viewBox="0 0 240 162" class="w-full h-36">
+            <line x1="120" y1="100" x2="120" y2="22" stroke="currentColor" stroke-opacity="0.2" stroke-dasharray="3 3" />
+            <line x1="120" y1="100" x2="200" y2="142" stroke="currentColor" stroke-opacity="0.2" stroke-dasharray="3 3" />
+            <line x1="120" y1="100" x2="40" y2="142" stroke="currentColor" stroke-opacity="0.2" stroke-dasharray="3 3" />
+            <polygon points="120,${p1y} ${p2x},${p2y} ${p3x},${p3y}" fill="var(--primary)" fill-opacity="0.22" stroke="var(--primary)" stroke-width="2" />
+            <text x="120" y="15" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.7">${labels[0].split(" ")[0]}</text>
+            <text x="205" y="155" text-anchor="end" font-size="12" fill="currentColor" opacity="0.7">${labels[1].split(" ")[0]}</text>
+            <text x="35" y="155" text-anchor="start" font-size="12" fill="currentColor" opacity="0.7">${labels[2].split(" ")[0]}</text>
+          </svg>
+          ${[1,2,3].map(i => `
+            <div>
+              <div class="flex justify-between mb-1"><span class="font-medium">${labels[i-1]}</span><span class="text-[var(--muted-foreground)]">${w["s"+i]} / 10</span></div>
+              <input type="range" min="1" max="10" value="${w["s"+i]}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).s${i}=+this.value;renderApp()" class="w-full" />
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // E4: Clean Checklist / Stage Rows
+    function renderCleanE4(m, w) {
+      const items = m.cfg.items || [];
+      const isSingle = m.cfg.mode === "single_stage" || m.cfg.mode === "conflict";
+      return `
+        <div class="rounded-2xl bg-[var(--background)] border border-[var(--border)] divide-y divide-[var(--border)] overflow-hidden">
+          ${items.map((txt, idx) => {
+            const active = isSingle ? w.stageIdx === idx : Boolean(w.checks[idx]);
+            const clickFn = isSingle
+              ? `getWork(MODELS.find(x=>x.id===${m.id})).stageIdx=${idx};renderApp()`
+              : `const wk=getWork(MODELS.find(x=>x.id===${m.id}));wk.checks[${idx}]=!wk.checks[${idx}];renderApp()`;
+            return `
+              <button onclick="${clickFn}" class="w-full px-4 py-3 text-left text-xs flex items-center justify-between gap-3 hover:bg-[var(--secondary)]/40 transition">
+                <span class="leading-relaxed ${active ? "font-semibold text-[var(--foreground)]" : "text-[var(--muted-foreground)]"}">${txt}</span>
+                <span class="w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${active ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]" : "border-[var(--border)]"}">
+                  ${active ? ICONS.check : ""}
+                </span>
+              </button>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    // E5: Clean Combinator, 9-Dot & Six Thinking Hats
+    function renderCleanE5(m, w) {
+      if (m.cfg.subtype === "sixhats") {
+        const hats = [
+          ["White", "Objective facts & missing data"],
+          ["Red", "Intuition & gut feelings"],
+          ["Black", "Risks & failure points"],
+          ["Yellow", "Best-case upside"],
+          ["Green", "Creative alternatives"],
+          ["Blue", "Big-picture decision"]
+        ];
+        return `
+          <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+              ${hats.map(([name], i) => `
+                <button onclick="getWork(MODELS.find(x=>x.id===50)).hatIdx=${i};renderApp()" class="py-2 px-2 rounded-xl border font-medium transition ${w.hatIdx===i ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]" : "bg-[var(--background)] border-[var(--border)] text-[var(--muted-foreground)]"}">${name}</button>
+              `).join("")}
+            </div>
+            <div class="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+              <span class="font-semibold block">${hats[w.hatIdx][0]} Hat — ${hats[w.hatIdx][1]}</span>
+              <textarea rows="3" oninput="getWork(MODELS.find(x=>x.id===50)).hats[${w.hatIdx}]=this.value" class="w-full bg-transparent leading-relaxed focus:outline-none resize-none">${esc(w.hats[w.hatIdx] || "")}</textarea>
+            </div>
+          </div>
+        `;
+      }
+      if (m.cfg.subtype === "ninedot") {
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-medium">9-Dot Lateral Boundary</span>
+              <button onclick="const wk=getWork(MODELS.find(x=>x.id===33));wk.puzzleSolved=!wk.puzzleSolved;renderApp()" class="px-3 py-1 rounded-lg bg-[var(--secondary)] font-medium">${w.puzzleSolved ? "Reset" : "Reveal 4-Line Path"}</button>
+            </div>
+            <svg viewBox="0 0 220 140" class="w-full h-32">
+              ${[60,100,140].map(x => [30,70,110].map(y => `<circle cx="${x}" cy="${y}" r="4.5" fill="currentColor" />`).join("")).join("")}
+              ${w.puzzleSolved ? `<polyline points="60,110 60,8 168,116 38,116 152,22" fill="none" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />` : ""}
+            </svg>
+            <div>
+              <label class="block text-[var(--muted-foreground)] mb-1">Self-imposed assumption you can drop:</label>
+              <input type="text" value="${esc(w.brokenRule)}" oninput="getWork(MODELS.find(x=>x.id===33)).brokenRule=this.value" class="w-full px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+          ${m.cfg.rows.map((r, ri) => `
+            <div class="space-y-1.5">
+              <span class="text-[var(--muted-foreground)] font-medium">${r.param}</span>
+              <div class="grid grid-cols-2 gap-1.5">
+                ${r.opts.map((opt, oi) => `
+                  <button onclick="getWork(MODELS.find(x=>x.id===9)).morphSel[${ri}]=${oi};renderApp()" class="py-1.5 px-2.5 rounded-xl border text-left truncate transition ${w.morphSel[ri]===oi ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] font-medium" : "bg-[var(--card)] border-[var(--border)]"}">${opt}</button>
+                `).join("")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // E6: Clean Timelines, Curves & Loops
+    function renderCleanE6(m, w) {
+      const sub = m.cfg.subtype;
+      if (sub === "gift") {
+        const mult = { partner: 35, child: 22, friend: 15, boss: 8, service: 5 }[w.giftRel] || 15;
+        const base = Math.round(25 + w.giftYears * mult * (w.giftMilestone ? 1.5 : 1));
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3.5 text-xs">
+            <div class="flex flex-wrap gap-1.5">
+              ${[["partner","Partner"],["child","Family"],["friend","Friend"],["boss","Colleague"],["service","Host"]].map(([k,l]) => `
+                <button onclick="getWork(MODELS.find(x=>x.id===10)).giftRel='${k}';renderApp()" class="px-3 py-1.5 rounded-xl border ${w.giftRel===k ? "bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)] font-medium" : "bg-[var(--card)] border-[var(--border)]"}">${l}</button>
+              `).join("")}
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span>Years known</span><span>${w.giftYears} yrs</span></div>
+              <input type="range" min="1" max="20" value="${w.giftYears}" oninput="getWork(MODELS.find(x=>x.id===10)).giftYears=+this.value;renderApp()" class="w-full" />
+            </div>
+            <label class="flex items-center justify-between py-1 cursor-pointer">
+              <span>Major milestone occasion</span>
+              <input type="checkbox" ${w.giftMilestone ? "checked" : ""} onchange="getWork(MODELS.find(x=>x.id===10)).giftMilestone=this.checked;renderApp()" />
+            </label>
+            <div class="pt-2 border-t border-[var(--border)] flex items-baseline justify-between">
+              <span class="text-[var(--muted-foreground)]">Suggested range</span>
+              <strong class="text-sm">$${base} – $${Math.round(base * 1.3)}</strong>
+            </div>
+          </div>
+        `;
+      }
+      if (sub === "threeloop") {
+        const unit = (w.hoursTotal / 3).toFixed(1);
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+            <div>
+              <div class="flex justify-between mb-1"><span>Available time until deadline</span><span>${w.hoursTotal} hrs / days</span></div>
+              <input type="range" min="3" max="60" step="3" value="${w.hoursTotal}" oninput="getWork(MODELS.find(x=>x.id===51)).hoursTotal=+this.value;renderApp()" class="w-full" />
+            </div>
+            <div class="divide-y divide-[var(--border)] border-t border-[var(--border)]">
+              <div class="py-2.5 flex justify-between"><span>Loop 1 · Complete rough draft</span><strong>${unit} units</strong></div>
+              <div class="py-2.5 flex justify-between"><span>Loop 2 · Critique & structural fix</span><strong>${unit} units</strong></div>
+              <div class="py-2.5 flex justify-between"><span>Loop 3 · Polish & surprise buffer</span><strong>${unit} units</strong></div>
+            </div>
+          </div>
+        `;
+      }
+      if (sub === "crossroads") {
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+            ${w.roads.map((r, i) => `
+              <div>
+                <div class="flex justify-between mb-1"><span class="font-medium">${r.name}</span><span class="text-[var(--muted-foreground)]">${r.score}/10</span></div>
+                <input type="range" min="1" max="10" value="${r.score}" oninput="getWork(MODELS.find(x=>x.id===13)).roads[${i}].score=+this.value;renderApp()" class="w-full" />
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+      if (sub === "supermemo") {
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+            <label class="font-medium block">Key lesson to retain</label>
+            <textarea rows="2" oninput="getWork(MODELS.find(x=>x.id===22)).memoText=this.value" class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)]">${esc(w.memoText)}</textarea>
+            <div class="grid grid-cols-4 gap-2 text-center pt-1">
+              ${["Day 1","Day 10","Day 30","Day 60"].map(d => `<div class="py-2 rounded-xl bg-[var(--card)] border border-[var(--border)] font-medium">${d}</div>`).join("")}
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+          <div>
+            <div class="flex justify-between mb-1"><span>Current Knowledge</span><span>${w.knowPct}%</span></div>
+            <input type="range" min="5" max="95" value="${w.knowPct}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).knowPct=+this.value;renderApp()" class="w-full" />
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span>Decision Impact</span><span>${w.impactPct}%</span></div>
+            <input type="range" min="5" max="95" value="${w.impactPct}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).impactPct=+this.value;renderApp()" class="w-full" />
+          </div>
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Guiding principle going forward</label>
+            <input type="text" value="${esc(w.dlDouble)}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).dlDouble=this.value" class="w-full px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+          </div>
+        </div>
+      `;
+    }
+
+    // E7: Clean Network, Chain & Resilience
+    function renderCleanE7(m, w) {
+      const sub = m.cfg.subtype;
+      if (sub === "chain") {
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-2.5 text-xs">
+            ${w.chainSteps.map((st, i) => `
+              <div class="flex items-center gap-2.5">
+                <span class="w-5 h-5 rounded-full bg-[var(--secondary)] text-xs font-mono flex items-center justify-center shrink-0">${i}</span>
+                <input type="text" value="${esc(st)}" oninput="getWork(MODELS.find(x=>x.id===37)).chainSteps[${i}]=this.value" class="flex-1 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+              </div>
+            `).join("")}
+          </div>
+        `;
+      }
+      if (sub === "tree" || sub === "bullseye") {
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+            <div class="flex gap-2">
+              <input id="clean-e7-inp" type="text" placeholder="Add person or client..." class="flex-1 px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+              <button onclick="const v=document.getElementById('clean-e7-inp').value.trim();if(v){getWork(MODELS.find(x=>x.id===${m.id})).netItems.push({name:v,via:'Direct',group:'Friends',tag:'Promoter',ring:'Weekly'});renderApp();}" class="px-3 py-2 rounded-xl bg-[var(--secondary)] font-medium">Add</button>
+            </div>
+            <div class="divide-y divide-[var(--border)]">
+              ${w.netItems.map(n => `
+                <div class="py-2 flex items-center justify-between gap-2">
+                  <span class="font-medium">${esc(n.name)}</span>
+                  <span class="text-[var(--muted-foreground)]">${esc(n.via || n.group)} · ${esc(n.tag || n.ring)}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Key fragility or assumption</label>
+            <input type="text" value="${esc(w.swanAssumption)}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).swanAssumption=this.value" class="w-full px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+          </div>
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Resilient safeguard / niche counter-move</label>
+            <input type="text" value="${esc(w.swanBuffer)}" oninput="getWork(MODELS.find(x=>x.id===${m.id})).swanBuffer=this.value" class="w-full px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+          </div>
+        </div>
+      `;
+    }
+
+    // E8: Clean Monte Carlo & Custom Model Studio
+    function renderCleanE8(m, w) {
+      if (m.cfg.subtype === "montecarlo") {
+        const res = w.mcResult || simulateTriangular(w.mcMin, w.mcLikely, w.mcMax);
+        w.mcResult = res;
+        return `
+          <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-4 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-medium">1,000 Randomized Trials</span>
+              <button onclick="const wk=getWork(MODELS.find(x=>x.id===40));wk.mcResult=null;renderApp()" class="px-3 py-1 rounded-lg bg-[var(--secondary)] font-medium">Resimulate</button>
+            </div>
+            <canvas id="mc-canvas" width="320" height="100" class="w-full h-24 rounded-xl bg-[var(--card)] border border-[var(--border)]"></canvas>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)]"><span class="text-[var(--muted-foreground)] block">P10 Low</span><strong class="text-sm">${res.p10}</strong></div>
+              <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--primary)]"><span class="text-[var(--muted-foreground)] block">Median</span><strong class="text-sm">${res.p50}</strong></div>
+              <div class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)]"><span class="text-[var(--muted-foreground)] block">P90 High</span><strong class="text-sm">${res.p90}</strong></div>
+            </div>
+            <div class="space-y-2.5">
+              <div><div class="flex justify-between mb-1"><span>Conservative (Min)</span><span>${w.mcMin}</span></div><input type="range" min="10" max="120" value="${w.mcMin}" oninput="const wk=getWork(MODELS.find(x=>x.id===40));wk.mcMin=+this.value;wk.mcResult=null;renderApp()" class="w-full" /></div>
+              <div><div class="flex justify-between mb-1"><span>Most Likely</span><span>${w.mcLikely}</span></div><input type="range" min="20" max="180" value="${w.mcLikely}" oninput="const wk=getWork(MODELS.find(x=>x.id===40));wk.mcLikely=+this.value;wk.mcResult=null;renderApp()" class="w-full" /></div>
+              <div><div class="flex justify-between mb-1"><span>Optimistic (Max)</span><span>${w.mcMax}</span></div><input type="range" min="40" max="260" value="${w.mcMax}" oninput="const wk=getWork(MODELS.find(x=>x.id===40));wk.mcMax=+this.value;wk.mcResult=null;renderApp()" class="w-full" /></div>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-3 text-xs">
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Custom Framework Name</label>
+            <input type="text" value="${esc(w.customTitle)}" oninput="getWork(MODELS.find(x=>x.id===52)).customTitle=this.value" class="w-full px-3 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)] font-medium" />
+          </div>
+          <div class="grid grid-cols-2 gap-2.5">
+            ${w.customQ.map((ql, qi) => `
+              <div class="p-3 rounded-xl bg-[var(--card)] border border-[var(--border)]">
+                <span class="text-[var(--muted-foreground)] block mb-1">Quadrant ${qi + 1}</span>
+                <input type="text" value="${esc(ql)}" oninput="getWork(MODELS.find(x=>x.id===52)).customQ[${qi}]=this.value" class="w-full bg-transparent font-medium focus:outline-none" />
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function simulateTriangular(min, likely, max) {
+      const lo = Math.min(min, likely, max), hi = Math.max(min, likely, max);
+      const mid = Math.min(Math.max(likely, lo), hi);
+      const arr = [];
+      for (let i = 0; i < 1000; i++) {
+        const u = Math.random(), f = (mid - lo) / Math.max(hi - lo, 1);
+        arr.push(u < f ? lo + Math.sqrt(u * (hi - lo) * (mid - lo)) : hi - Math.sqrt((1 - u) * (hi - lo) * (hi - mid)));
+      }
+      arr.sort((a, b) => a - b);
+      return { p10: Math.round(arr[100]), p50: Math.round(arr[500]), p90: Math.round(arr[900]), arr };
+    }
+
+    function drawMonteCarlo() {
+      const c = document.getElementById("mc-canvas");
+      if (!c) return;
+      const ctx = c.getContext("2d");
+      ctx.clearRect(0, 0, c.width, c.height);
+      const primary = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#3b82f6";
+      const w = getWork(MODELS.find(x => x.id === 40));
+      const arr = w.mcResult?.arr || [];
+      if (!arr.length) return;
+      const bins = new Array(18).fill(0);
+      const min = arr[0], max = Math.max(arr[arr.length - 1], min + 1);
+      arr.forEach(v => { bins[Math.min(17, Math.floor(((v - min) / (max - min)) * 18))]++; });
+      const peak = Math.max(...bins, 1);
+      bins.forEach((cnt, idx) => {
+        const h = (cnt / peak) * 76;
+        ctx.fillStyle = primary;
+        ctx.globalAlpha = idx >= 3 && idx <= 14 ? 0.85 : 0.35;
+        ctx.fillRect(14 + idx * 16.5, 88 - h, 12, h);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function buildTakeaway(m, w) {
+      if (m.engine === "E1") {
+        const counts = [0,1,2,3].map(q => w.quadItems.filter(x => x.q === q).length);
+        if (m.id === 1) {
+          const first = w.quadItems.find(x => x.q === 1);
+          return first
+            ? `Start immediately with "${first.t}", then protect uninterrupted time for your ${counts[0]} scheduled strategic item(s).`
+            : `No immediate crises—focus calmly on your ${counts[0]} important, non-urgent item(s).`;
+        }
+        const top = counts.indexOf(Math.max(...counts));
+        return `Most entries currently cluster in "${m.cfg.quads[top]}" (${counts[top]}). Check whether quieter quadrants reveal a blind spot.`;
+      }
+      if (m.engine === "E2") {
+        const l = w.leftItems.reduce((s,x)=>s+x.w,0), r = w.rightItems.reduce((s,x)=>s+x.w,0);
+        if (Math.abs(r - l) <= 1) return `Forces are closely balanced (${l} vs. ${r}). Run a small, low-risk test before making an irreversible move.`;
+        return r > l
+          ? `${m.cfg.rightLabel} leads (${r} vs. ${l}). Address your top left-side concern and move forward with confidence.`
+          : `${m.cfg.leftLabel} carries more weight (${l} vs. ${r}). Hold steady until stronger pull factors emerge.`;
+      }
+      if (m.engine === "E3") {
+        if (m.id === 14) {
+          if (w.s1 - w.s2 >= 3) return `Challenge (${w.s1}) exceeds Skill (${w.s2}) — narrow scope or get support to avoid burnout.`;
+          if (w.s2 - w.s1 >= 3) return `Skill (${w.s2}) exceeds Challenge (${w.s1}) — raise ambition to re-enter Flow.`;
+          return `Balanced inside the Flow channel (${w.s1} vs. ${w.s2}). Protect deep, distraction-free sessions.`;
+        }
+        if (m.id === 24 && w.s1 >= 8 && w.s3 <= 4) return `High obligation (${w.s1}/10) paired with low desire (${w.s3}/10) — strong signal to renegotiate scope or explore a role change.`;
+        return `Current profile captured (${w.s1}, ${w.s2}, ${w.s3}). Revisit in a week to see how your balance shifts.`;
+      }
+      if (m.engine === "E4") {
+        if (m.cfg.mode === "single_stage" || m.cfg.mode === "conflict") return `Selected stage: ${(m.cfg.items || [])[w.stageIdx]}. Focus on resolving this step cleanly.`;
+        const done = w.checks.filter(Boolean).length;
+        return `${done} of ${(m.cfg.items || []).length} checks verified. Strengthen any unchecked line before committing.`;
+      }
+      if (m.engine === "E5") {
+        if (m.id === 50) return `Blue-Hat synthesis: ${w.hats[5] || "Review all six perspectives to lock your next step."}`;
+        if (m.id === 33) return `Boundary to challenge: "${w.brokenRule}"`;
+        return `Combined concept: ${m.cfg.rows.map((r, i) => r.opts[w.morphSel[i]]).join(" · ")}.`;
+      }
+      if (m.engine === "E6") {
+        if (m.id === 13) {
+          const top = [...w.roads].sort((a,b)=>b.score-a.score)[0];
+          return `Strongest pull (${top.score}/10): ${top.name}. Define one small step down that path this week.`;
+        }
+        if (m.id === 51) return `Three equal loops of ${(w.hoursTotal/3).toFixed(1)} units ensure you finish three complete iterations smoothly.`;
+        return `Knowledge (${w.knowPct}%) vs. Impact (${w.impactPct}%) logged — commit to a clear decision checkpoint.`;
+      }
+      if (m.engine === "E7") return `Mapped ${m.cfg.subtype === 'chain' ? (w.chainSteps.length - 1) + ' warm connection steps' : 'key structural dependencies'} — act on your highest-trust link first.`;
+      if (m.id === 40 && w.mcResult) return `80% confidence band spans ${w.mcResult.p10} to ${w.mcResult.p90} (median ${w.mcResult.p50}). Plan around ${w.mcResult.p10} for a stress-free margin.`;
+      return `Custom framework "${w.customTitle}" is ready for reuse.`;
+    }
+
+    // =========================================================================
+    // CLEAN MODALS & ACCORDION SETTINGS SHEET (ZERO CLUTTER)
+    // =========================================================================
+    function renderInfoPopover() {
+      const m = MODELS.find(x => x.id === state.infoModelId);
+      if (!m) return "";
+      return `
+        <div class="absolute inset-0 bg-black/25 z-50 flex items-center justify-center p-5" onclick="if(event.target===this){state.infoModelId=null;renderApp();}">
+          <div class="w-full max-w-[315px] max-h-[60%] overflow-y-auto no-scrollbar bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-xl space-y-3 text-xs">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="text-[var(--muted-foreground)] font-mono">#${String(m.id).padStart(2,"0")} · ${CHAPTERS[m.cat].short} · ${m.mins} min</span>
+                <h3 class="text-sm font-semibold mt-0.5 leading-snug">${m.title}</h3>
+              </div>
+              <button onclick="state.infoModelId=null;renderApp()" class="w-6 h-6 rounded-full bg-[var(--secondary)] flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] shrink-0">✕</button>
+            </div>
+
+            <p class="leading-relaxed text-[var(--foreground)]/90">${esc(m.writeup)}</p>
+
+            <div class="p-2.5 rounded-xl bg-[var(--secondary)]/60 leading-relaxed text-[var(--muted-foreground)]">
+              <strong class="text-[var(--foreground)]">How to use:</strong> ${esc(m.howTo)}
+            </div>
+
+            <p class="italic text-[var(--muted-foreground)] border-l-2 border-[var(--primary)] pl-2.5">
+              "${esc(m.quote)}"
+            </p>
+
+            ${(m.seeAlso && m.seeAlso.length) ? `
+              <div class="pt-1 border-t border-[var(--border)] flex flex-wrap items-center gap-1.5">
+                <span class="text-[var(--muted-foreground)]">Related:</span>
+                ${m.seeAlso.map(sid => {
+                  const sm = MODELS.find(x => x.id === sid);
+                  return sm ? `<button onclick="state.infoModelId=null;openTechnique(${sm.id})" class="px-2 py-0.5 rounded-md bg-[var(--secondary)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)] font-medium transition">#${sm.id} ${sm.title.replace("The ","")}</button>` : "";
+                }).join("")}
+              </div>
+            ` : ""}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderSettingsDrawer() {
+      const ctx = state.activeId ? `Model #${state.activeId}` : state.tab;
+      const sec = state.settingsAcc;
+      return `
+        <div class="absolute inset-0 bg-black/35 z-40 flex items-end" onclick="if(event.target===this){state.showSettings=false;renderApp();}">
+          <div class="w-full bg-[var(--card)] border-t border-[var(--border)] rounded-t-2xl p-5 space-y-3 max-h-[85%] overflow-y-auto text-xs">
+            <div class="flex items-center justify-between pb-1">
+              <h3 class="text-sm font-semibold">Settings & Vault</h3>
+              <button onclick="state.showSettings=false;renderApp()" class="text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Close</button>
+            </div>
+
+            <!-- Clean Accordion Rows: Only 1 expanded at a time -> Zero Clutter -->
+            <div class="border border-[var(--border)] rounded-2xl divide-y divide-[var(--border)] overflow-hidden bg-[var(--background)]">
+
+              <!-- Row 1: Account & Offline Sync -->
+              <div>
+                <button onclick="state.settingsAcc=state.settingsAcc==='account'?'':'account';renderApp()" class="w-full px-4 py-3 flex items-center justify-between font-medium">
+                  <span>Account & Cloud Sync</span>
+                  <span class="text-[var(--muted-foreground)]">${state.user.isGuest ? "Offline Guest" : state.user.email}</span>
+                </button>
+                ${sec === "account" ? `
+                  <div class="px-4 pb-3.5 space-y-2.5 text-[var(--muted-foreground)]">
+                    ${state.user.isGuest ? `
+                      <p class="leading-relaxed">Your decisions are stored privately on-device. Sign in anytime to sync across devices without losing guest items.</p>
+                      <div class="flex gap-2">
+                        <button onclick="state.user={isGuest:false,name:'Aman',email:'aman@decide50.app'};renderApp()" class="flex-1 py-2 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold">Continue with Google</button>
+                        <button onclick="state.user={isGuest:false,name:'Aman',email:'aman@decide50.app'};renderApp()" class="flex-1 py-2 rounded-xl bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] font-medium">Email</button>
+                      </div>
+                    ` : `
+                      <div class="flex items-center justify-between">
+                        <span>Synced as ${esc(state.user.email)}</span>
+                        <button onclick="state.user={isGuest:true,name:'Guest',email:''};renderApp()" class="px-3 py-1 rounded-lg bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">Sign out</button>
+                      </div>
+                    `}
+                  </div>
+                ` : ""}
+              </div>
+
+              <!-- Row 2: Reminders -->
+              <div>
+                <button onclick="state.settingsAcc=state.settingsAcc==='reminders'?'':'reminders';renderApp()" class="w-full px-4 py-3 flex items-center justify-between font-medium">
+                  <span>Reflection & Spaced Reminders</span>
+                  <span class="text-[var(--muted-foreground)]">${state.reminders.enabled ? "On" : "Off"}</span>
+                </button>
+                ${sec === "reminders" ? `
+                  <div class="px-4 pb-3.5 space-y-2 text-[var(--muted-foreground)]">
+                    <p>Gentle check-ins at ${state.reminders.am} & ${state.reminders.pm}, plus Day 1/10/30/60 SuperMemo decision reviews.</p>
+                    <button onclick="state.reminders.enabled=!state.reminders.enabled;renderApp()" class="px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] font-medium">
+                      ${state.reminders.enabled ? "Pause notifications" : "Enable notifications"}
+                    </button>
+                  </div>
+                ` : ""}
+              </div>
+
+              <!-- Row 3: Export -->
+              <div>
+                <button onclick="state.settingsAcc=state.settingsAcc==='export'?'':'export';renderApp()" class="w-full px-4 py-3 flex items-center justify-between font-medium">
+                  <span>Export Decisions</span>
+                  <span class="text-[var(--muted-foreground)]">.md / .json</span>
+                </button>
+                ${sec === "export" ? `
+                  <div class="px-4 pb-3.5 flex items-center justify-between gap-2 text-[var(--muted-foreground)]">
+                    <span>Download readable Markdown briefs or full JSON backup.</span>
+                    <button onclick="state.showSettings=false;state.showExport=true;renderApp()" class="px-3 py-1.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold shrink-0">Preview</button>
+                  </div>
+                ` : ""}
+              </div>
+
+              <!-- Row 4: Bug / Feedback -->
+              <div>
+                <button onclick="state.settingsAcc=state.settingsAcc==='bugs'?'':'bugs';renderApp()" class="w-full px-4 py-3 flex items-center justify-between font-medium">
+                  <span>Report an Issue</span>
+                  <span class="text-[var(--muted-foreground)]">${state.bugs.length} open</span>
+                </button>
+                ${sec === "bugs" ? `
+                  <div class="px-4 pb-3.5 space-y-2.5">
+                    <div class="flex gap-2">
+                      <input id="clean-bug-inp" type="text" placeholder="Describe issue (${ctx})..." class="flex-1 px-3 py-1.5 rounded-xl bg-[var(--card)] border border-[var(--border)]" />
+                      <button onclick="const v=document.getElementById('clean-bug-inp').value.trim();if(v){state.bugs.unshift({desc:v,ctx:'${ctx} · v1.0.0'});renderApp();}" class="px-3 py-1.5 rounded-xl bg-[var(--primary)] text-[var(--primary-foreground)] font-semibold">Send</button>
+                    </div>
+                    ${state.bugs.map(b => `<div class="text-[var(--muted-foreground)] flex justify-between gap-2"><span class="truncate">${esc(b.desc)}</span><span class="shrink-0">${b.ctx}</span></div>`).join("")}
+                  </div>
+                ` : ""}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderExportModal() {
+      const md = state.journal.map(d => {
+        const m = MODELS.find(x => x.id === d.modelId) || MODELS[0];
+        return `## ${d.title}\nTechnique: ${m.title}\nTakeaway: ${d.verdict}\n`;
+      }).join("\n") || "No saved decisions yet.";
+      return `
+        <div class="absolute inset-0 bg-black/35 z-50 flex items-center justify-center p-5" onclick="if(event.target===this){state.showExport=false;renderApp();}">
+          <div class="w-full max-w-md bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 space-y-3 text-xs">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-sm">Markdown Export Preview</h3>
+              <button onclick="state.showExport=false;renderApp()" class="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Close</button>
+            </div>
+            <pre class="p-3.5 rounded-xl bg-[var(--secondary)]/60 overflow-x-auto whitespace-pre-wrap max-h-60 leading-relaxed">${esc(md)}</pre>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // VIEW 2: SCREEN OVERVIEW GALLERY
+    // =========================================================================
+    function renderScreenOverview() {
+      const cards = [
+        { step: "01", title: "Problem Concierge (Mode 1)", desc: "Clean single-box prompt with quiet Focus & Examples menus. Recommends the #1 best-fit technique on a compact card with a '?' button for details and a 1-tap disclosure for alternatives.", action: "state.tab='decide';state.activeId=null;setStudioView('app')", cta: "Preview Mode 1 →" },
+        { step: "02", title: "52-Technique Library (Mode 2)", desc: "Calm editorial list with crisp underline chapter tabs, a subtle '?' quick-peek button on every row, and quiet Filter & Compass icon toggles.", action: "state.tab='library';state.libView='list';state.activeId=null;setStudioView('app')", cta: "Preview Library →" },
+        { step: "03", title: "Interactive Book Compass", desc: "Clean interactive Me/Others × Doing/Thinking quadrant map from Page 82 of the book for visual browsing.", action: "state.tab='library';state.libView='compass';state.activeId=null;setStudioView('app')", cta: "Preview Compass →" },
+        { step: "04", title: "Uncluttered Workspace + '?' Popover", desc: "Workspaces open straight into the interactive canvas with zero wall of text; tapping '?' opens a compact floating card with the technique writeup and how-to guide.", action: "openTechnique(6);state.infoModelId=6;renderApp()", cta: "Preview '?' Popover on #06 →" },
+        { step: "05", title: "Overflow Tools Without Clutter", desc: "Sample data, workspace reset, book quotes, related techniques, and Markdown export live cleanly inside the header's '⋯' menu so nothing crowds the workspace.", action: "openTechnique(1);state.showMoreMenu=true;renderApp()", cta: "Preview Eisenhower (#01) →" },
+        { step: "06", title: "Journal & Accordion Settings", desc: "Saved decisions support 1-tap spaced recall check-ins, while Account Sync, Reminders, Export, and Issue Reporting sit inside a clean accordion sheet.", action: "state.showSettings=true;setStudioView('app')", cta: "Preview Settings Sheet →" }
+      ];
+      document.getElementById("screens-grid").innerHTML = cards.map(c => `
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-2">
+            <span class="text-xs font-mono text-[var(--muted-foreground)]">Surface ${c.step}</span>
+            <h3 class="text-sm font-semibold">${c.title}</h3>
+            <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">${c.desc}</p>
+          </div>
+          <button onclick="${c.action}" class="w-full py-2 px-3 rounded-xl bg-[var(--secondary)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)] text-xs font-semibold transition">${c.cta}</button>
+        </div>
+      `).join("");
+    }
+
+    // =========================================================================
+    // VIEW 3: ALL 52 TECHNIQUE WRITEUPS REFERENCE
+    // =========================================================================
+    function renderGuideCatalog() {
+      const q = (document.getElementById("guide-search")?.value || "").toLowerCase().trim();
+      const filtered = MODELS.filter(m => !q || m.title.toLowerCase().includes(q) || m.sub.toLowerCase().includes(q) || m.writeup.toLowerCase().includes(q) || String(m.id) === q);
+      document.getElementById("guide-list").innerHTML = filtered.map(m => `
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-5 flex flex-col justify-between space-y-3">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
+              <span class="font-mono">#${String(m.id).padStart(2,"0")} · ${CHAPTERS[m.cat].label}</span>
+              <span>${m.mins} min</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold">${m.title}</h3>
+              <p class="text-xs text-[var(--muted-foreground)]">${m.sub}</p>
+            </div>
+            <p class="text-xs leading-relaxed text-[var(--foreground)]/90 pt-1">${esc(m.writeup)}</p>
+            <p class="text-xs text-[var(--muted-foreground)] leading-relaxed"><strong class="text-[var(--foreground)]">How to use:</strong> ${esc(m.howTo)}</p>
+          </div>
+          <div class="pt-2 border-t border-[var(--border)] flex justify-end">
+            <button onclick="openTechnique(${m.id})" class="px-3.5 py-1.5 rounded-xl bg-[var(--secondary)] hover:bg-[var(--primary)] hover:text-[var(--primary-foreground)] text-xs font-semibold transition">Open Interactive Tool →</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    // Initialize clean studio
+    setStudioView("app");
+  </script>
+</body>
+</html>

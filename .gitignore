@@ -1,0 +1,24 @@
+# Copyrighted reference material & local scratch
+*.pdf
+.DS_Store
+
+# Keystores & secrets (NEVER commit)
+*.jks
+*.keystore
+**/android/key.properties
+.env
+.env.*
+
+# Flutter / Dart / Android / Web build artifacts
+untangle_app/.dart_tool/
+untangle_app/.flutter-plugins
+untangle_app/.flutter-plugins-dependencies
+untangle_app/.packages
+untangle_app/build/
+untangle_app/android/.gradle/
+untangle_app/android/local.properties
+untangle_app/android/**/GeneratedPluginRegistrant.*
+
+# Node backend
+untangle_backend/node_modules/
+npm-debug.log*
