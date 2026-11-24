@@ -70,7 +70,7 @@ class GcpBackendService {
     defaultValue: 'http://localhost:8080',
   );
   static const String _localBugsKey = 'untangle_local_bugs_v1';
-  static const String appVersion = '1.1.0+2';
+  static const String appVersion = '1.1.1+3';
 
   final String baseUrl;
   http.Client _client;

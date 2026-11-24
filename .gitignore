@@ -22,3 +22,4 @@ untangle_app/android/**/GeneratedPluginRegistrant.*
 # Node backend
 untangle_backend/node_modules/
 npm-debug.log*
+release_uploads/
